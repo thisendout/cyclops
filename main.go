@@ -51,13 +51,13 @@ func main() {
 		fmt.Println("Connected to docker daemon...")
 	}
 
-	server := NewServer(dc, "dockerfile")
+	server := NewServer(dc)
+	ws := NewWorkspace(server, "bash", defaultImage)
 
 	line := liner.NewLiner()
 	defer line.Close()
 
 	prompt := defaultPrompt
-	image := defaultImage
 
 	if f, err := os.Open("/tmp/.sysrepl_history"); err == nil {
 		line.ReadHistory(f)
@@ -82,7 +82,7 @@ mainloop:
 				if strings.HasPrefix(input, ":run") {
 					cmd := strings.TrimPrefix(input, ":run ")
 					line.AppendHistory(input)
-					if res, err := server.Eval(cmd, image); err != nil {
+					if res, err := ws.Eval(cmd); err != nil {
 						fmt.Println(err)
 					} else {
 						fmt.Println("Exit: ", res.Code)
@@ -91,8 +91,16 @@ mainloop:
 					}
 				} else if strings.HasPrefix(input, ":from") {
 					line.AppendHistory(input)
-					image = strings.TrimPrefix(input, ":from ")
+					image := strings.TrimPrefix(input, ":from ")
+					ws.SetImage(image)
 					fmt.Println("Image: ", image)
+				} else if strings.HasPrefix(input, ":print") {
+					line.AppendHistory(input)
+					if out, err := ws.Sprint(); err == nil {
+						for _, line := range out {
+							fmt.Println(line)
+						}
+					}
 				} else if input == "" {
 					continue
 				} else {
