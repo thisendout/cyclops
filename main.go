@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/peterh/liner"
 )
 
@@ -24,11 +26,19 @@ func help() {
 	fmt.Println(usage)
 }
 
-func ansible(playbook string, image string) {
-	if err := eval("ansible-playbook -i /work/inventory /work/"+playbook, image); err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println("Ansible completed")
+func printChanges(changes []docker.Change) {
+	for _, change := range changes {
+		if change.Path == "/work" {
+			continue
+		}
+		switch change.Kind {
+		case 0:
+			color.Yellow("~ %s", change.Path)
+		case 1:
+			color.Green("+ %s", change.Path)
+		case 2:
+			color.Red("- %s", change.Path)
+		}
 	}
 }
 
@@ -40,6 +50,8 @@ func main() {
 	} else {
 		fmt.Println("Connected to docker daemon...")
 	}
+
+	server := NewServer(dc, "dockerfile")
 
 	line := liner.NewLiner()
 	defer line.Close()
@@ -70,17 +82,17 @@ mainloop:
 				if strings.HasPrefix(input, ":run") {
 					cmd := strings.TrimPrefix(input, ":run ")
 					line.AppendHistory(input)
-					if err := dc.Eval(cmd, image); err != nil {
+					if res, err := server.Eval(cmd, image); err != nil {
 						fmt.Println(err)
+					} else {
+						fmt.Println("Exit: ", res.Code)
+						fmt.Println(res.Log)
+						printChanges(res.Changes)
 					}
 				} else if strings.HasPrefix(input, ":from") {
 					line.AppendHistory(input)
 					image = strings.TrimPrefix(input, ":from ")
 					fmt.Println("Image: ", image)
-				} else if strings.HasPrefix(input, ":ansible") {
-					line.AppendHistory(input)
-					playbook := strings.TrimPrefix(input, ":ansible ")
-					ansible(playbook, image)
 				} else if input == "" {
 					continue
 				} else {

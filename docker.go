@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/fatih/color"
 	"github.com/fsouza/go-dockerclient"
 )
 
@@ -52,7 +51,8 @@ func NewDockerClient() (*DockerClient, error) {
 	return dc, nil
 }
 
-func (d *DockerClient) Eval(command string, image string) error {
+func (d *DockerClient) Run(command string, image string) (EvalResult, error) {
+	res := EvalResult{}
 
 	cwd, _ := os.Getwd()
 
@@ -67,7 +67,7 @@ func (d *DockerClient) Eval(command string, image string) error {
 	}
 	cont, err := d.client.CreateContainer(options)
 	if err != nil {
-		return err
+		return res, err
 	}
 
 	var buf bytes.Buffer
@@ -87,36 +87,22 @@ func (d *DockerClient) Eval(command string, image string) error {
 	}()
 
 	if err := d.client.StartContainer(cont.ID, &docker.HostConfig{}); err != nil {
-		return err
+		return res, err
 	}
 
-	_, err = d.client.WaitContainer(cont.ID)
+	res.Code, err = d.client.WaitContainer(cont.ID)
 	if err != nil {
-		return err
+		return res, err
 	}
+	res.Log = &buf
 
-	changes, err := d.client.ContainerChanges(cont.ID)
+	res.Changes, err = d.client.ContainerChanges(cont.ID)
 	if err != nil {
-		return err
+		return res, err
 	}
-	for _, change := range changes {
-		if change.Path == "/work" {
-			continue
-		}
-		switch change.Kind {
-		case 0:
-			color.Yellow("~ %s", change.Path)
-		case 1:
-			color.Green("+ %s", change.Path)
-		case 2:
-			color.Red("- %s", change.Path)
-		}
-	}
-
-	fmt.Println(string(buf.Bytes()))
 
 	if err := d.client.RemoveContainer(docker.RemoveContainerOptions{ID: cont.ID}); err != nil {
-		return err
+		return res, err
 	}
-	return nil
+	return res, nil
 }

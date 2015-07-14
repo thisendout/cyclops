@@ -1,5 +1,0 @@
----
- - hosts: localhost
-   gather_facts: no
-   tasks:
-     - shell: touch /tmp/foo2
