@@ -7,29 +7,21 @@ import (
 	"strings"
 
 	"github.com/peterh/liner"
-	"github.com/rjeczalik/notify"
 )
 
 const (
 	defaultPrompt = "sysrepl"
+	defaultImage  = "ubuntu:trusty"
 )
 
 func help() {
 	usage := `sysrepl - help
-:bash	execute bash script
 :help	show help
-:image	set base image
+:from	set base image
+:run	execute shell command
 :quit	quit sysrepl - <ctrl-d>
 `
 	fmt.Println(usage)
-}
-
-func handle(ei notify.EventInfo) {
-	fmt.Println(ei)
-
-	if err := eval("/work/run.sh", "ubuntu:trusty"); err != nil {
-		fmt.Println(err)
-	}
 }
 
 func ansible(playbook string, image string) {
@@ -40,26 +32,20 @@ func ansible(playbook string, image string) {
 	}
 }
 
-func watch() {
-	c := make(chan notify.EventInfo, 1)
-
-	if err := notify.Watch("./...", c, notify.All); err != nil {
-		panic(err)
-	}
-	defer notify.Stop(c)
-
-	for {
-		ei := <-c
-		handle(ei)
-	}
-}
-
 func main() {
+	dc, err := NewDockerClient()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	} else {
+		fmt.Println("Connected to docker daemon...")
+	}
+
 	line := liner.NewLiner()
 	defer line.Close()
 
 	prompt := defaultPrompt
-	image := "ubuntu:trusty"
+	image := defaultImage
 
 	if f, err := os.Open("/tmp/.sysrepl_history"); err == nil {
 		line.ReadHistory(f)
@@ -81,18 +67,22 @@ mainloop:
 				fmt.Println("Exiting...")
 				break mainloop
 			default:
-				if strings.HasPrefix(input, ":bash") {
-					cmd := strings.TrimPrefix(input, ":bash ")
+				if strings.HasPrefix(input, ":run") {
+					cmd := strings.TrimPrefix(input, ":run ")
 					line.AppendHistory(input)
-					if err := eval(cmd, image); err != nil {
+					if err := dc.Eval(cmd, image); err != nil {
 						fmt.Println(err)
 					}
-				} else if strings.HasPrefix(input, ":image") {
-					image = strings.TrimPrefix(input, ":image ")
+				} else if strings.HasPrefix(input, ":from") {
+					line.AppendHistory(input)
+					image = strings.TrimPrefix(input, ":from ")
 					fmt.Println("Image: ", image)
 				} else if strings.HasPrefix(input, ":ansible") {
+					line.AppendHistory(input)
 					playbook := strings.TrimPrefix(input, ":ansible ")
 					ansible(playbook, image)
+				} else if input == "" {
+					continue
 				} else {
 					fmt.Println(input)
 					line.AppendHistory(input)

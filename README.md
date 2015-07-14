@@ -5,12 +5,12 @@ A [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%9
 ## Commands
 
 * ```:type arg``` - Sets the session to display/export it's state to a given format.
-  * Arguments: 
+  * Arguments:
     * shell - export for the bash shell
     * dockerfile - export for a Dockerfile
 
-* ```:image name``` - Accepts a single argument of a Docker image name to use for execution of commands.
-  * Consumers: 
+* ```:from name``` - Accepts a single argument of a Docker image name to use for execution of commands.
+  * Consumers:
     * Dockerfile (```FROM```)
 
 * ```:run command``` - Runs a shell command against an image and displays the STDOUT and filesystem diff.
