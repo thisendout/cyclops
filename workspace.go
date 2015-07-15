@@ -19,17 +19,17 @@ type Workspace struct {
 	currentImage string
 	state        []string
 	history      []EvalResult
-	server       *Server
+	docker       DockerService
 }
 
-func NewWorkspace(server *Server, mode string, image string) *Workspace {
+func NewWorkspace(docker DockerService, mode string, image string) *Workspace {
 	ws := &Workspace{
 		Mode:         mode,
 		Image:        image,
 		currentImage: image,
 		state:        []string{},
 		history:      []EvalResult{},
-		server:       server,
+		docker:       docker,
 	}
 	return ws
 }
@@ -40,7 +40,7 @@ func (w *Workspace) SetImage(image string) error {
 }
 
 func (w *Workspace) Eval(command string) (EvalResult, error) {
-	res, err := w.server.Eval(command, w.currentImage)
+	res, err := Eval(w.docker, command, w.currentImage)
 	if res.Code == 0 {
 		w.currentImage = res.NewImage
 		w.state = append(w.state, "RUN "+command)

@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/fsouza/go-dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,4 +45,44 @@ func TestNewDockerClientTCPInsecure(t *testing.T) {
 
 	_, err = NewDockerClient("tcp://192.168.254.254:2376/", "", "")
 	assert.NoError(err)
+}
+
+func TestEval(t *testing.T) {
+	assert := assert.New(t)
+
+	res, err := Eval(&MockDockerClient{}, "date", "ubuntu:trusty")
+	assert.NoError(err)
+	assert.Equal("date", res.Command)
+	assert.Equal("ubuntu:trusty", res.Image)
+}
+
+//Mock Docker Client for use by Servers and Workspaces for testing
+type MockDockerClient struct{}
+
+func (m *MockDockerClient) AttachToContainer(docker.AttachToContainerOptions) error {
+	return nil
+}
+
+func (m *MockDockerClient) CommitContainer(docker.CommitContainerOptions) (*docker.Image, error) {
+	return &docker.Image{}, nil
+}
+
+func (m *MockDockerClient) ContainerChanges(string) ([]docker.Change, error) {
+	return []docker.Change{}, nil
+}
+
+func (m *MockDockerClient) CreateContainer(docker.CreateContainerOptions) (*docker.Container, error) {
+	return &docker.Container{}, nil
+}
+
+func (m *MockDockerClient) RemoveContainer(docker.RemoveContainerOptions) error {
+	return nil
+}
+
+func (m *MockDockerClient) StartContainer(string, *docker.HostConfig) error {
+	return nil
+}
+
+func (m *MockDockerClient) WaitContainer(string) (int, error) {
+	return 0, nil
 }

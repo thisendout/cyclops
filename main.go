@@ -51,8 +51,7 @@ func main() {
 		fmt.Println("Connected to docker daemon...")
 	}
 
-	server := NewServer(dc)
-	ws := NewWorkspace(server, "bash", defaultImage)
+	ws := NewWorkspace(dc, "bash", defaultImage)
 
 	line := liner.NewLiner()
 	defer line.Close()
