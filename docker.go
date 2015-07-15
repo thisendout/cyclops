@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	"github.com/fsouza/go-dockerclient"
 )
@@ -85,6 +86,7 @@ func Eval(d DockerService, command string, image string) (EvalResult, error) {
 		d.AttachToContainer(attachOpts)
 	}()
 
+	start := time.Now()
 	if err := d.StartContainer(cont.ID, &docker.HostConfig{}); err != nil {
 		return res, err
 	}
@@ -94,6 +96,7 @@ func Eval(d DockerService, command string, image string) (EvalResult, error) {
 		return res, err
 	}
 	res.Log = buf
+	res.Duration = time.Since(start)
 
 	if res.Code == 0 {
 		if image, err := d.CommitContainer(docker.CommitContainerOptions{Container: cont.ID}); err == nil {

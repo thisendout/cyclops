@@ -26,7 +26,22 @@ func help() {
 	fmt.Println(usage)
 }
 
+func printResults(res EvalResult) {
+	fmt.Println()
+	fmt.Println("Exit:", res.Code)
+	fmt.Println("Took:", res.Duration)
+	fmt.Println("From:", res.Image)
+	if res.Code == 0 {
+		fmt.Println("Committed:", res.NewImage[:12])
+	}
+	printChanges(res.Changes)
+}
+
 func printChanges(changes []docker.Change) {
+	fmt.Println("Changes:")
+	if len(changes) == 0 {
+		fmt.Println("<none>")
+	}
 	for _, change := range changes {
 		if change.Path == "/work" {
 			continue
@@ -84,8 +99,7 @@ mainloop:
 					if res, err := ws.Eval(cmd); err != nil {
 						fmt.Println(err)
 					} else {
-						fmt.Println("Exit: ", res.Code)
-						printChanges(res.Changes)
+						printResults(res)
 					}
 				} else if strings.HasPrefix(input, ":from") {
 					line.AppendHistory(input)
