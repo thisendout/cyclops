@@ -1,8 +1,8 @@
 # sysrepl
 
-A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.
+A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.  Faster than a VM, safer than production, more feedback than a local terminal.
 
-sysrepl executes commands inside of a docker container and provides immediate feedback.  Successful runs create a new base image used for subsequent runs automatically.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile or shell script and/or save your resulting docker container for later.
+sysrepl executes commands inside of a docker container and provides immediate feedback.  Successful runs create a new base image used for subsequent runs automatically.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile or shell script and/or save the resulting docker container for later.
 
 ## Getting Started
 
