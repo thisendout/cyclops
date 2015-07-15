@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-
 	"github.com/fsouza/go-dockerclient"
 )
 
@@ -13,7 +11,7 @@ type EvalRequest struct {
 
 type EvalResult struct {
 	Code     int
-	Log      *bytes.Buffer
+	Log      *Buffer
 	Changes  []docker.Change
 	NewImage string
 }
