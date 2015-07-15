@@ -2,7 +2,7 @@
 
 A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.
 
-sysrepl executes commands inside of a docker container and provides immediate feedback.
+sysrepl executes commands inside of a docker container and provides immediate feedback.  Successful runs create a new base image used for subsequent runs automatically.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile or shell script and/or save your resulting docker container for later.
 
 ## Getting Started
 
@@ -50,6 +50,16 @@ sysrepl> :print
 * ```:print``` - Prints the source/commands run in the session formatted for the session type.
 
 * ```:write filename``` - Writes the source/commands to a file given the session type.
+
+## Output
+
+For each :run executed, sysrepl reports:
+ * Exit Code
+ * Execution Duration
+ * Docker image used as base
+ * Committed docker image ID with changes (if exit was 0)
+ * List of filesystem changes
+
 
 ## License
 
