@@ -5,12 +5,13 @@ import (
 )
 
 type EvalResult struct {
-	Command  string
-	Code     int
-	Log      *Buffer
-	Changes  []docker.Change
-	Image    string //image run against
-	NewImage string //image with committed changes
+	Command   string
+	Code      int
+	Log       *Buffer
+	Changes   []docker.Change
+	BaseImage string //assumed base image, used during :from switches
+	Image     string //image run against
+	NewImage  string //image with committed changes
 }
 
 type Workspace struct {
@@ -41,6 +42,7 @@ func (w *Workspace) SetImage(image string) error {
 
 func (w *Workspace) Eval(command string) (EvalResult, error) {
 	res, err := Eval(w.docker, command, w.currentImage)
+	res.BaseImage = w.Image
 	if res.Code == 0 {
 		w.currentImage = res.NewImage
 		w.state = append(w.state, "RUN "+command)
@@ -53,8 +55,4 @@ func (w *Workspace) Sprint() ([]string, error) {
 	res := []string{"FROM " + w.Image}
 	res = append(res, w.state...)
 	return res, nil
-}
-
-func (w *Workspace) Write(outfile string) error {
-	return nil
 }

@@ -36,3 +36,13 @@ func TestWorkspaceEval(t *testing.T) {
 	assert.Equal("date", res.Command)
 	assert.Equal("ubuntu:trusty", res.Image)
 }
+
+func TestWorkspaceSprint(t *testing.T) {
+	assert := assert.New(t)
+	ws := NewWorkspace(&MockDockerClient{}, "dockerfile", "ubuntu:trusty")
+
+	out, err := ws.Sprint()
+	assert.NoError(err)
+	assert.Len(out, 1)
+	assert.Equal("FROM ubuntu:trusty", out[0])
+}

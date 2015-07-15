@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/fsouza/go-dockerclient"
@@ -50,39 +51,82 @@ func TestNewDockerClientTCPInsecure(t *testing.T) {
 func TestEval(t *testing.T) {
 	assert := assert.New(t)
 
-	res, err := Eval(&MockDockerClient{}, "date", "ubuntu:trusty")
+	res, err := Eval(NewMockDockerClient(), "date", "ubuntu:trusty")
 	assert.NoError(err)
 	assert.Equal("date", res.Command)
 	assert.Equal("ubuntu:trusty", res.Image)
 }
 
 //Mock Docker Client for use by Servers and Workspaces for testing
-type MockDockerClient struct{}
+type MockDockerClient struct {
+	FailAttach   bool
+	FailChanges  bool
+	FailCommit   bool
+	FailCreate   bool
+	FailRemove   bool
+	FailStart    bool
+	FailWait     bool
+	PleaseReturn int
+}
+
+func NewMockDockerClient() *MockDockerClient {
+	return &MockDockerClient{
+		FailAttach:   false,
+		FailChanges:  false,
+		FailCommit:   false,
+		FailCreate:   false,
+		FailRemove:   false,
+		FailStart:    false,
+		FailWait:     false,
+		PleaseReturn: 0,
+	}
+}
 
 func (m *MockDockerClient) AttachToContainer(docker.AttachToContainerOptions) error {
+	if m.FailAttach {
+		return errors.New("MOCK: Failed to attach")
+	}
 	return nil
 }
 
 func (m *MockDockerClient) CommitContainer(docker.CommitContainerOptions) (*docker.Image, error) {
+	if m.FailCommit {
+		return &docker.Image{}, errors.New("MOCK: Failed to commit")
+	}
 	return &docker.Image{}, nil
 }
 
 func (m *MockDockerClient) ContainerChanges(string) ([]docker.Change, error) {
+	if m.FailChanges {
+		return []docker.Change{}, errors.New("MOCK: Failed to determine changes")
+	}
 	return []docker.Change{}, nil
 }
 
 func (m *MockDockerClient) CreateContainer(docker.CreateContainerOptions) (*docker.Container, error) {
+	if m.FailCreate {
+		return &docker.Container{}, errors.New("MOCK: Failed to create container")
+	}
 	return &docker.Container{}, nil
 }
 
 func (m *MockDockerClient) RemoveContainer(docker.RemoveContainerOptions) error {
+	if m.FailRemove {
+		return errors.New("MOCK: Failed to remove container")
+	}
 	return nil
 }
 
 func (m *MockDockerClient) StartContainer(string, *docker.HostConfig) error {
+	if m.FailStart {
+		return errors.New("MOCK: Failed to start container")
+	}
 	return nil
 }
 
 func (m *MockDockerClient) WaitContainer(string) (int, error) {
-	return 0, nil
+	if m.FailWait {
+		return m.PleaseReturn, errors.New("MOCK: Failed to wait on container")
+	}
+	return m.PleaseReturn, nil
 }
