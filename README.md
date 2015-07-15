@@ -1,6 +1,36 @@
 # sysrepl
 
-A [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for system programming and tasks.
+A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.
+
+sysrepl executes commands inside of a docker container and provides immediate feedback.
+
+## Getting Started
+
+We're not packaging binaries just yet.  You'll need a Go environment setup and then:
+
+```
+$ go get github.com/thisendout/sysrepl
+```
+
+Make sure you have a DOCKER_HOST env variable set. [docker-machine](https://github.com/docker/machine) can help with this part.
+
+```
+$ docker-machine env dev
+export DOCKER_TLS_VERIFY=yes
+export DOCKER_CERT_PATH=/home/sysrepl/.docker/machine/machines/dev
+export DOCKER_HOST=tcp://192.168.99.100:2376
+$ docker pull ubuntu:trusty
+```
+
+Launch the repl and try some bash commands.
+
+```
+$ sysrepl
+sysrepl> :help
+sysrepl> :run apt-get update -y
+sysrepl> :run apt-get install -y tmux
+sysrepl> :print
+```
 
 ## Commands
 
@@ -21,16 +51,6 @@ A [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%9
 
 * ```:write filename``` - Writes the source/commands to a file given the session type.
 
-## Example
-```
-# Given a machine named 'dev'
-$(docker-machine env dev)
-docker build -t ansible .
-docker pull ubuntu:trusty
-go install
-sysrepl
-:image ansible
-:ansible site.yml
-:image ubuntu:trusty
-:bash touch /tmp/foo
-```
+## License
+
+sysrepl is released under the MIT License (c) 2015 This End Out, LLC. See `LICENSE` for the full license text.
