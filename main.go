@@ -86,7 +86,6 @@ mainloop:
 						fmt.Println(err)
 					} else {
 						fmt.Println("Exit: ", res.Code)
-						fmt.Println(res.Log)
 						printChanges(res.Changes)
 					}
 				} else if strings.HasPrefix(input, ":from") {
