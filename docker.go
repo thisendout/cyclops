@@ -16,7 +16,7 @@ func NewDockerClient(host string, tlsVerify string, certPath string) (client *do
 		return nil, errors.New("DOCKER_HOST must be set")
 	}
 
-	if tlsVerify == "yes" {
+	if tlsVerify == "yes" || tlsVerify == "1" {
 		if certPath == "" {
 			return client, errors.New("DOCKER_TLS_VERIFY set without DOCKER_CERT_PATH")
 		}
