@@ -1,12 +1,15 @@
 package main
 
 import (
+	"time"
+
 	"github.com/fsouza/go-dockerclient"
 )
 
 type EvalResult struct {
 	Command   string
 	Code      int
+	Duration  time.Duration
 	Log       *Buffer
 	Changes   []docker.Change
 	BaseImage string //assumed base image, used during :from switches
