@@ -43,7 +43,7 @@ func printChanges(changes []docker.Change) {
 }
 
 func main() {
-	dc, err := NewDockerClient()
+	dc, err := NewDockerClient(os.Getenv("DOCKER_HOST"), os.Getenv("DOCKER_TLS_VERIFY"), os.Getenv("DOCKER_CERT_PATH"))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

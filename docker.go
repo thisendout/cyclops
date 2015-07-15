@@ -2,20 +2,21 @@ package main
 
 import (
 	"errors"
-	"os"
 	"path"
 
 	"github.com/fsouza/go-dockerclient"
 )
 
-func NewDockerClient() (client *docker.Client, err error) {
-	host := os.Getenv("DOCKER_HOST")
+type DockerClient struct {
+	*docker.Client
+}
+
+func NewDockerClient(host string, tlsVerify string, certPath string) (client *docker.Client, err error) {
 	if host == "" {
-		return nil, errors.New("DOCKET_HOST must be set")
+		return nil, errors.New("DOCKER_HOST must be set")
 	}
 
-	if tlsVerify := os.Getenv("DOCKER_TLS_VERIFY"); tlsVerify == "yes" {
-		certPath := os.Getenv("DOCKER_CERT_PATH")
+	if tlsVerify == "yes" {
 		if certPath == "" {
 			return client, errors.New("DOCKER_TLS_VERIFY set without DOCKER_CERT_PATH")
 		}
@@ -35,8 +36,5 @@ func NewDockerClient() (client *docker.Client, err error) {
 		}
 	}
 
-	if err := client.Ping(); err != nil {
-		return client, err
-	}
 	return client, nil
 }
