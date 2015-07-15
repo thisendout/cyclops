@@ -4,16 +4,13 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
-type EvalRequest struct {
-	Command string
-	Image   string
-}
-
 type EvalResult struct {
+	Command  string
 	Code     int
 	Log      *Buffer
 	Changes  []docker.Change
-	NewImage string
+	Image    string //image run against
+	NewImage string //image with committed changes
 }
 
 type Workspace struct {
@@ -21,6 +18,7 @@ type Workspace struct {
 	Image        string
 	currentImage string
 	state        []string
+	history      []EvalResult
 	server       *Server
 }
 
@@ -30,6 +28,7 @@ func NewWorkspace(server *Server, mode string, image string) *Workspace {
 		Image:        image,
 		currentImage: image,
 		state:        []string{},
+		history:      []EvalResult{},
 		server:       server,
 	}
 	return ws
@@ -46,6 +45,7 @@ func (w *Workspace) Eval(command string) (EvalResult, error) {
 		w.currentImage = res.NewImage
 		w.state = append(w.state, "RUN "+command)
 	}
+	w.history = append(w.history, res)
 	return res, err
 }
 

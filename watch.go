@@ -9,9 +9,9 @@ import (
 func handle(ei notify.EventInfo) {
 	fmt.Println(ei)
 
-	if err := eval("/work/run.sh", "ubuntu:trusty"); err != nil {
-		fmt.Println(err)
-	}
+	//if err := eval("/work/run.sh", "ubuntu:trusty"); err != nil {
+	//	fmt.Println(err)
+	//}
 }
 
 func watch() {

@@ -6,6 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewDockerClientNegative(t *testing.T) {
+	assert := assert.New(t)
+
+	_, err := NewDockerClient("", "", "")
+	assert.EqualError(err, "DOCKER_HOST must be set")
+}
+
 func TestNewDockerClientSocket(t *testing.T) {
 	assert := assert.New(t)
 
@@ -30,6 +37,9 @@ func TestNewDockerClientTCPInsecure(t *testing.T) {
 	assert := assert.New(t)
 
 	_, err := NewDockerClient("tcp://192.168.254.254:2376/", "no", "")
+	assert.NoError(err)
+
+	_, err = NewDockerClient("tcp://192.168.254.254:2376/", "0", "")
 	assert.NoError(err)
 
 	_, err = NewDockerClient("tcp://192.168.254.254:2376/", "", "")

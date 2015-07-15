@@ -18,7 +18,10 @@ func NewServer(dc *docker.Client) *Server {
 }
 
 func (s *Server) Eval(command string, image string) (EvalResult, error) {
-	res := EvalResult{}
+	res := EvalResult{
+		Command: command,
+		Image:   image,
+	}
 
 	cwd, _ := os.Getwd()
 
