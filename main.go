@@ -133,8 +133,7 @@ mainloop:
 				} else if strings.HasPrefix(input, ":from") {
 					line.AppendHistory(input)
 					image := strings.TrimPrefix(input, ":from ")
-					err := ws.SetImage(image)
-					if err != nil {
+					if err := ws.SetImage(image); err != nil {
 						fmt.Println("error setting image:", err)
 					} else {
 						fmt.Println("Image: ", image)
