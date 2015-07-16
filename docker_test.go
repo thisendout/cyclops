@@ -59,6 +59,19 @@ func TestEval(t *testing.T) {
 	assert.Equal("ubuntu:trusty", res.Image)
 }
 
+func TestVerifyImage(t *testing.T) {
+	assert := assert.New(t)
+
+	md := NewMockDockerClient()
+
+	err := verifyImage(md, "ubuntu:trusty")
+	assert.NoError(err)
+
+	md.FailInspect = true
+	err = verifyImage(md, "ubuntu:trusty")
+	assert.Error(err)
+}
+
 //Mock Docker Client for use by Servers and Workspaces for testing
 type MockDockerClient struct {
 	FailAttach   bool
@@ -68,6 +81,7 @@ type MockDockerClient struct {
 	FailRemove   bool
 	FailStart    bool
 	FailWait     bool
+	FailInspect  bool
 	PleaseReturn int
 	lastId       int
 }
@@ -81,6 +95,7 @@ func NewMockDockerClient() *MockDockerClient {
 		FailRemove:   false,
 		FailStart:    false,
 		FailWait:     false,
+		FailInspect:  false,
 		PleaseReturn: 0,
 		lastId:       0,
 	}
@@ -138,4 +153,11 @@ func (m *MockDockerClient) WaitContainer(string) (int, error) {
 		return m.PleaseReturn, errors.New("MOCK: Failed to wait on container")
 	}
 	return m.PleaseReturn, nil
+}
+
+func (m *MockDockerClient) InspectImage(string) (*docker.Image, error) {
+	if m.FailInspect {
+		return &docker.Image{}, errors.New("MOCK: Failed to find image")
+	}
+	return &docker.Image{}, nil
 }

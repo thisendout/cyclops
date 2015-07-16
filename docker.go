@@ -18,6 +18,7 @@ type DockerService interface {
 	RemoveContainer(docker.RemoveContainerOptions) error
 	StartContainer(string, *docker.HostConfig) error
 	WaitContainer(string) (int, error)
+	InspectImage(string) (*docker.Image, error)
 }
 
 func NewDockerClient(host string, tlsVerify string, certPath string) (client *docker.Client, err error) {
@@ -119,4 +120,9 @@ func CommitContainer(d DockerService, id string) (string, error) {
 
 func RemoveContainer(d DockerService, id string) error {
 	return d.RemoveContainer(docker.RemoveContainerOptions{ID: id})
+}
+
+func verifyImage(d DockerService, image string) error {
+	_, err := d.InspectImage(image)
+	return err
 }
