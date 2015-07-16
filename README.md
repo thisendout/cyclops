@@ -51,6 +51,8 @@ sysrepl> :print
 
 * ```:write filename``` - Writes the source/commands to a file given the session type.
 
+* All other entered commands are executed against the current image and results are displayed, but the changes are not committed.  You can `:commit` the change for the previous run, if desired.  Use bare commands to experiment or explore the current environment.
+
 ## Output
 
 For each :run executed, sysrepl reports:

@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/fsouza/go-dockerclient"
@@ -67,6 +69,7 @@ type MockDockerClient struct {
 	FailStart    bool
 	FailWait     bool
 	PleaseReturn int
+	lastId       int
 }
 
 func NewMockDockerClient() *MockDockerClient {
@@ -79,6 +82,7 @@ func NewMockDockerClient() *MockDockerClient {
 		FailStart:    false,
 		FailWait:     false,
 		PleaseReturn: 0,
+		lastId:       0,
 	}
 }
 
@@ -89,11 +93,13 @@ func (m *MockDockerClient) AttachToContainer(docker.AttachToContainerOptions) er
 	return nil
 }
 
-func (m *MockDockerClient) CommitContainer(docker.CommitContainerOptions) (*docker.Image, error) {
+func (m *MockDockerClient) CommitContainer(opts docker.CommitContainerOptions) (*docker.Image, error) {
 	if m.FailCommit {
 		return &docker.Image{}, errors.New("MOCK: Failed to commit")
 	}
-	return &docker.Image{}, nil
+	return &docker.Image{
+		ID: strings.Replace(opts.Container, "c", "i", 1),
+	}, nil
 }
 
 func (m *MockDockerClient) ContainerChanges(string) ([]docker.Change, error) {
@@ -107,7 +113,10 @@ func (m *MockDockerClient) CreateContainer(docker.CreateContainerOptions) (*dock
 	if m.FailCreate {
 		return &docker.Container{}, errors.New("MOCK: Failed to create container")
 	}
-	return &docker.Container{}, nil
+	m.lastId++
+	return &docker.Container{
+		ID: fmt.Sprintf("c%v", m.lastId),
+	}, nil
 }
 
 func (m *MockDockerClient) RemoveContainer(docker.RemoveContainerOptions) error {

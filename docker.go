@@ -69,6 +69,7 @@ func Eval(d DockerService, command string, image string) (EvalResult, error) {
 	if err != nil {
 		return res, err
 	}
+	res.Id = cont.ID
 
 	buf := NewBuffer(os.Stdout)
 	attachOpts := docker.AttachToContainerOptions{
@@ -99,18 +100,23 @@ func Eval(d DockerService, command string, image string) (EvalResult, error) {
 	res.Duration = time.Since(start)
 
 	if res.Code == 0 {
-		if image, err := d.CommitContainer(docker.CommitContainerOptions{Container: cont.ID}); err == nil {
-			res.NewImage = image.ID
-		}
 	}
 
 	res.Changes, err = d.ContainerChanges(cont.ID)
 	if err != nil {
 		return res, err
 	}
-
-	if err := d.RemoveContainer(docker.RemoveContainerOptions{ID: cont.ID}); err != nil {
-		return res, err
-	}
 	return res, nil
+}
+
+func CommitContainer(d DockerService, id string) (string, error) {
+	if image, err := d.CommitContainer(docker.CommitContainerOptions{Container: id}); err != nil {
+		return "", err
+	} else {
+		return image.ID, nil
+	}
+}
+
+func RemoveContainer(d DockerService, id string) error {
+	return d.RemoveContainer(docker.RemoveContainerOptions{ID: id})
 }
