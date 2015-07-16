@@ -121,3 +121,7 @@ func (w *Workspace) commit(id string) (string, error) {
 	}
 	return imageId, err
 }
+
+func (w *Workspace) Back(n int) error {
+	return nil
+}

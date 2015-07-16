@@ -132,3 +132,19 @@ func TestWorkflowEvalCommit(t *testing.T) {
 	}
 
 }
+
+func TestWorkflowBack(t *testing.T) {
+	assert := assert.New(t)
+	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+
+	run, _ := ws.Run("cmd1")
+	ws.Run("cmd2")
+	ws.Run("cmd3")
+
+	err := ws.Back(2)
+	assert.NoError(err)
+	run, _ := ws.Run("cmd4")
+
+	assert.Equal(run4.Image, run1.Id)
+	assert.Equal(run4.Id, ws.currentImage)
+}
