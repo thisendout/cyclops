@@ -60,7 +60,7 @@ func printChanges(changes []docker.Change) {
 
 func pruneChanges(changes []docker.Change) []docker.Change {
 	var c = []docker.Change{}
-	var p string = ""
+	var p string
 	for i := len(changes)-1; i > 0; i -= 1 {
 		if changes[i].Kind == 0 {
 			if !strings.Contains(p, changes[i].Path) {
