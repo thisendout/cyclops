@@ -42,7 +42,8 @@ func printChanges(changes []docker.Change) {
 	if len(changes) == 0 {
 		fmt.Println("<none>")
 	}
-	for _, change := range changes {
+	prunedChanges := pruneChanges(changes)
+	for _, change := range prunedChanges {
 		if change.Path == "/work" {
 			continue
 		}
@@ -55,6 +56,27 @@ func printChanges(changes []docker.Change) {
 			color.Red("- %s", change.Path)
 		}
 	}
+}
+
+func pruneChanges(changes []docker.Change) []docker.Change {
+	var c = []docker.Change{}
+	var p string = ""
+	for i := len(changes)-1; i > 0; i -= 1 {
+		if changes[i].Kind == 0 {
+			if !strings.Contains(p, changes[i].Path) {
+				c = append(c, changes[i])
+			}
+		} else {
+			c = append(c, changes[i])
+		}
+		p = changes[i].Path
+	}
+	// reverse the slice results
+	for i := len(c)/2-1; i >= 0; i-- {
+		opp := len(c)-1-i
+		c[i], c[opp] = c[opp], c[i]
+	}
+	return c
 }
 
 func main() {
