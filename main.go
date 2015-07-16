@@ -26,12 +26,12 @@ func help() {
 	fmt.Println(usage)
 }
 
-func printResults(res EvalResult) {
+func printResults(res *EvalResult) {
 	fmt.Println()
 	fmt.Println("Exit:", res.Code)
 	fmt.Println("Took:", res.Duration)
 	fmt.Println("From:", res.Image)
-	if res.Code == 0 {
+	if res.NewImage != "" {
 		fmt.Println("Committed:", res.NewImage[:12])
 	}
 	printChanges(res.Changes)
@@ -96,10 +96,17 @@ mainloop:
 				if strings.HasPrefix(input, ":run") {
 					cmd := strings.TrimPrefix(input, ":run ")
 					line.AppendHistory(input)
-					if res, err := ws.Eval(cmd); err != nil {
+					if res, err := ws.Run(cmd); err != nil {
 						fmt.Println(err)
 					} else {
 						printResults(res)
+					}
+				} else if strings.HasPrefix(input, ":commit") {
+					line.AppendHistory(input)
+					if id, err := ws.CommitLast(); err != nil {
+						fmt.Println(err)
+					} else {
+						fmt.Println("Committed:", id)
 					}
 				} else if strings.HasPrefix(input, ":from") {
 					line.AppendHistory(input)
@@ -116,8 +123,12 @@ mainloop:
 				} else if input == "" {
 					continue
 				} else {
-					fmt.Println(input)
 					line.AppendHistory(input)
+					if res, err := ws.Eval(input); err != nil {
+						fmt.Println(err)
+					} else {
+						printResults(res)
+					}
 				}
 			}
 		}

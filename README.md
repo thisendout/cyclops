@@ -47,9 +47,13 @@ sysrepl> :print
   * Consumers:
     * Dockerfile (```RUN```)
 
+* ```:commit``` - Commits the container created from the previous command and uses it as the base image for the next command.
+
 * ```:print``` - Prints the source/commands run in the session formatted for the session type.
 
 * ```:write filename``` - Writes the source/commands to a file given the session type.
+
+* All other entered commands are executed against the current image and results are displayed, but the changes are not committed.  You can `:commit` the change for the previous run, if desired.  Use bare commands to experiment or explore the current environment.
 
 ## Output
 
