@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,12 +17,19 @@ const (
 	defaultImage  = "ubuntu:trusty"
 )
 
+var (
+	ErrInvalidCommand     = errors.New("Invalid command")
+	ErrMissingRequiredArg = errors.New("Missing required argument for command")
+)
+
 func help() {
 	usage := `cyclops - help
-:help	show help
-:from	set base image
-:run	execute shell command
-:quit	quit cyclops - <ctrl-d>
+:help                 show help
+:from  [image]        set base image
+:run   [command ...]  execute shell command
+:commit               commit changes from last command
+:write [path/to/file] write state to file
+:quit                 quit cyclops - <ctrl-d>
 `
 	fmt.Println(usage)
 }
@@ -79,6 +87,48 @@ func pruneChanges(changes []docker.Change) []docker.Change {
 	return c
 }
 
+func parseCommand(input string) (string, string, error) {
+	if input == "" {
+		return "", "", nil
+	}
+	if string(input[0]) != ":" {
+		return "eval", input, nil
+	}
+	parts := strings.SplitN(input, " ", 2)
+	switch parts[0] {
+	case ":commit", ":c":
+		return "commit", "", nil
+	case ":help", ":h":
+		return "help", "", nil
+	case ":print", ":p":
+		return "print", "", nil
+	case ":quit", ":q":
+		return "quit", "", nil
+	case ":eval", ":e":
+		if len(parts) < 2 {
+			return "eval", "", ErrMissingRequiredArg
+		}
+		return "eval", parts[1], nil
+	case ":from", ":f":
+		if len(parts) < 2 {
+			return "from", "", ErrMissingRequiredArg
+		}
+		return "from", parts[1], nil
+	case ":run", ":r":
+		if len(parts) < 2 {
+			return "run", "", ErrMissingRequiredArg
+		}
+		return "run", parts[1], nil
+	case ":write", ":w":
+		if len(parts) < 2 {
+			return "write", "", ErrMissingRequiredArg
+		}
+		return "write", parts[1], nil
+	default:
+		return parts[0], "", ErrInvalidCommand
+	}
+}
+
 func main() {
 	dc, err := NewDockerClient(os.Getenv("DOCKER_HOST"), os.Getenv("DOCKER_TLS_VERIFY"), os.Getenv("DOCKER_CERT_PATH"))
 	if err != nil {
@@ -102,62 +152,68 @@ func main() {
 
 mainloop:
 	for {
-		if input, err := line.Prompt(prompt + "> "); err != nil {
-			if err == io.EOF {
-				fmt.Println() //Returns user to prompt on a new line
-				break
+		input, err := line.Prompt(prompt + "> ")
+		if err == io.EOF {
+			fmt.Println() //Returns user to prompt on a new line
+			break mainloop
+		}
+		command, args, err := parseCommand(input)
+		if err != nil {
+			fmt.Println(err, command)
+			continue
+		}
+		switch command {
+		case "help":
+			help()
+			continue
+		case "quit":
+			fmt.Println("Exiting...")
+			break mainloop
+		case "commit":
+			if id, err := ws.CommitLast(); err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Committed:", id)
 			}
-		} else {
-			switch input {
-			case ":help":
-				help()
-			case ":quit":
-				fmt.Println("Exiting...")
-				break mainloop
-			default:
-				if strings.HasPrefix(input, ":run") {
-					cmd := strings.TrimPrefix(input, ":run ")
-					line.AppendHistory(input)
-					if res, err := ws.Run(cmd); err != nil {
-						fmt.Println(err)
-					} else {
-						printResults(res)
-					}
-				} else if strings.HasPrefix(input, ":commit") {
-					line.AppendHistory(input)
-					if id, err := ws.CommitLast(); err != nil {
-						fmt.Println(err)
-					} else {
-						fmt.Println("Committed:", id)
-					}
-				} else if strings.HasPrefix(input, ":from") {
-					line.AppendHistory(input)
-					image := strings.TrimPrefix(input, ":from ")
-					if err := ws.SetImage(image); err != nil {
-						fmt.Println("error setting image:", err)
-					} else {
-						fmt.Println("Image: ", image)
-					}
-				} else if strings.HasPrefix(input, ":print") {
-					line.AppendHistory(input)
-					if out, err := ws.Sprint(); err == nil {
-						for _, line := range out {
-							fmt.Println(line)
-						}
-					}
-				} else if input == "" {
-					continue
-				} else {
-					line.AppendHistory(input)
-					if res, err := ws.Eval(input); err != nil {
-						fmt.Println(err)
-					} else {
-						printResults(res)
-					}
+		case "eval":
+			if res, err := ws.Eval(args); err != nil {
+				fmt.Println(err)
+			} else {
+				printResults(res)
+			}
+		case "from":
+			if err := ws.SetImage(args); err != nil {
+				fmt.Println("error setting image:", err)
+			} else {
+				fmt.Println("Image: ", args)
+			}
+		case "print":
+			if out, err := ws.Sprint(); err == nil {
+				for _, line := range out {
+					fmt.Println(line)
 				}
 			}
+		case "run":
+			if res, err := ws.Run(args); err != nil {
+				fmt.Println(err)
+			} else {
+				printResults(res)
+			}
+		case "write":
+			if args == "" {
+				fmt.Println("Missing file path: `:write [path/to/file]`")
+				break
+			}
+			if err := ws.Write(args); err != nil {
+				fmt.Println("Error writing file:", err)
+			} else {
+				fmt.Println("File written:", args)
+			}
+		default:
+			continue
 		}
 
+		line.AppendHistory(input)
 		if f, err := os.Create("/tmp/.cyclops_history"); err != nil {
 			fmt.Println("error writing history:", err)
 		} else {

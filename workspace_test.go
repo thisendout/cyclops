@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,6 +47,21 @@ func TestWorkspaceSprint(t *testing.T) {
 	assert.NoError(err)
 	assert.Len(out, 1)
 	assert.Equal("FROM ubuntu:trusty", out[0])
+}
+
+func TestWorkspaceWrite(t *testing.T) {
+	assert := assert.New(t)
+	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+
+	os.Mkdir(".test", 0755)
+	defer os.RemoveAll(".test")
+
+	ws.SetImage("ubuntu:latest")
+	ws.Run("touch /tmp")
+	assert.NotPanics(func() {
+		err := ws.Write(".test/Dockerfile")
+		assert.NoError(err)
+	})
 }
 
 // Workflow tests

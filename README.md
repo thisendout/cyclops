@@ -1,4 +1,5 @@
 # cyclops
+[![Circle CI](https://circleci.com/gh/thisendout/cyclops.svg?style=svg)](https://circleci.com/gh/thisendout/cyclops)
 
 A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.  Faster than a VM, safer than production, more feedback than a local terminal.
 
