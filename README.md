@@ -1,15 +1,15 @@
-# sysrepl
+# cyclops
 
 A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.  Faster than a VM, safer than production, more feedback than a local terminal.
 
-sysrepl executes commands inside of a docker container and provides immediate feedback.  Successful runs create a new base image used for subsequent runs automatically.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile or shell script and/or save the resulting docker container for later.
+cyclops executes commands inside of a docker container and provides immediate feedback.  Successful runs create a new base image used for subsequent runs automatically.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile or shell script and/or save the resulting docker container for later.
 
 ## Getting Started
 
 We're not packaging binaries just yet.  You'll need a Go environment setup and then:
 
 ```
-$ go get github.com/thisendout/sysrepl
+$ go get github.com/thisendout/cyclops
 ```
 
 Make sure you have a DOCKER_HOST env variable set. [docker-machine](https://github.com/docker/machine) can help with this part.
@@ -17,7 +17,7 @@ Make sure you have a DOCKER_HOST env variable set. [docker-machine](https://gith
 ```
 $ docker-machine env dev
 export DOCKER_TLS_VERIFY=yes
-export DOCKER_CERT_PATH=/home/sysrepl/.docker/machine/machines/dev
+export DOCKER_CERT_PATH=/home/cyclops/.docker/machine/machines/dev
 export DOCKER_HOST=tcp://192.168.99.100:2376
 $ docker pull ubuntu:trusty
 ```
@@ -25,11 +25,11 @@ $ docker pull ubuntu:trusty
 Launch the repl and try some bash commands.
 
 ```
-$ sysrepl
-sysrepl> :help
-sysrepl> :run apt-get update -y
-sysrepl> :run apt-get install -y tmux
-sysrepl> :print
+$ cyclops
+cyclops> :help
+cyclops> :run apt-get update -y
+cyclops> :run apt-get install -y tmux
+cyclops> :print
 ```
 
 ## Commands
@@ -57,7 +57,7 @@ sysrepl> :print
 
 ## Output
 
-For each :run executed, sysrepl reports:
+For each :run executed, cyclops reports:
  * Exit Code
  * Execution Duration
  * Docker image used as base
@@ -67,4 +67,4 @@ For each :run executed, sysrepl reports:
 
 ## License
 
-sysrepl is released under the MIT License (c) 2015 This End Out, LLC. See `LICENSE` for the full license text.
+cyclops is released under the MIT License (c) 2015 This End Out, LLC. See `LICENSE` for the full license text.

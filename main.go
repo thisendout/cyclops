@@ -12,16 +12,16 @@ import (
 )
 
 const (
-	defaultPrompt = "sysrepl"
+	defaultPrompt = "cyclops"
 	defaultImage  = "ubuntu:trusty"
 )
 
 func help() {
-	usage := `sysrepl - help
+	usage := `cyclops - help
 :help	show help
 :from	set base image
 :run	execute shell command
-:quit	quit sysrepl - <ctrl-d>
+:quit	quit cyclops - <ctrl-d>
 `
 	fmt.Println(usage)
 }
@@ -61,7 +61,7 @@ func printChanges(changes []docker.Change) {
 func pruneChanges(changes []docker.Change) []docker.Change {
 	var c = []docker.Change{}
 	var p string
-	for i := len(changes)-1; i > 0; i -= 1 {
+	for i := len(changes) - 1; i > 0; i -= 1 {
 		if changes[i].Kind == 0 {
 			if !strings.Contains(p, changes[i].Path) {
 				c = append(c, changes[i])
@@ -72,8 +72,8 @@ func pruneChanges(changes []docker.Change) []docker.Change {
 		p = changes[i].Path
 	}
 	// reverse the slice results
-	for i := len(c)/2-1; i >= 0; i-- {
-		opp := len(c)-1-i
+	for i := len(c)/2 - 1; i >= 0; i-- {
+		opp := len(c) - 1 - i
 		c[i], c[opp] = c[opp], c[i]
 	}
 	return c
@@ -95,7 +95,7 @@ func main() {
 
 	prompt := defaultPrompt
 
-	if f, err := os.Open("/tmp/.sysrepl_history"); err == nil {
+	if f, err := os.Open("/tmp/.cyclops_history"); err == nil {
 		line.ReadHistory(f)
 		f.Close()
 	}
@@ -158,7 +158,7 @@ mainloop:
 			}
 		}
 
-		if f, err := os.Create("/tmp/.sysrepl_history"); err != nil {
+		if f, err := os.Create("/tmp/.cyclops_history"); err != nil {
 			fmt.Println("error writing history:", err)
 		} else {
 			line.WriteHistory(f)
