@@ -157,12 +157,16 @@ func (w *Workspace) back(n int) error {
 
 func (w *Workspace) PrintHistory() {
 	var n = 1
-	var lastGood int
+	var lastActive = 0
+	var rows = [][]string{}
+
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetBorder(false)
 	table.SetHeader([]string{"Item", "Command", "Exit", "Created Image"})
 
-	var rows = [][]string{}
+	if len(w.history) == 0 {
+		return
+	}
 	for i, entry := range w.history {
 		var e = []string{}
 		if entry.Deleted {
@@ -170,7 +174,7 @@ func (w *Workspace) PrintHistory() {
 		} else {
 			e = append(e, strconv.Itoa(n))
 			n += 1
-			lastGood = i
+			lastActive = i
 		}
 		e = append(e, entry.Command)
 		e = append(e, strconv.Itoa(entry.Code))
@@ -181,9 +185,10 @@ func (w *Workspace) PrintHistory() {
 		}
 		rows = append(rows, e)
 	}
-	if rows[lastGood][0] != "x" {
-		rows[lastGood][0] = ">" + rows[lastGood][0]
+	if rows[lastActive][0] != "x" {
+		rows[lastActive][0] = ">" + rows[lastActive][0]
 	}
 	table.AppendBulk(rows)
 	table.Render()
+	fmt.Println("\nx - discarded, # - committed, > - active image")
 }

@@ -25,12 +25,15 @@ var (
 
 func help() {
 	usage := `cyclops - help
-:help                 show help
-:from  [image]        set base image
-:run   [command ...]  execute shell command
-:commit               commit changes from last command
-:write [path/to/file] write state to file
-:quit                 quit cyclops - <ctrl-d>
+:help|:h                     show help
+:from|:f      [image]        set base image
+:eval|:e      [command ...]  execute shell command (ephemeral)
+:run|:r       [command ...]  execute shell command (auto commits image)
+:commit|:c                   commit changes from last command
+:back|:b      [num]          go back in the history (default: 1)
+:history|:hs                 show the current history
+:write|:w     [path/to/file] write state to file
+:quit|:q                     quit cyclops - <ctrl-d>
 `
 	fmt.Println(usage)
 }
@@ -129,9 +132,9 @@ func parseCommand(input string) (string, string, error) {
 		return "write", parts[1], nil
 	case ":back", ":b":
 		if len(parts) < 2 {
-			return "back", "", ErrMissingRequiredArg
+			return "back", "1", nil
 		}
-		return "write", parts[1], nil
+		return "back", parts[1], nil
 	default:
 		return parts[0], "", ErrInvalidCommand
 	}
@@ -196,16 +199,10 @@ mainloop:
 				fmt.Println("Image: ", args)
 			}
 		case "back":
-			var num int
-			count := strings.TrimPrefix(input, ":back ")
-			if count == ":back" {
-				num = 1
-			} else {
-				num, err = strconv.Atoi(count)
-				if err != nil {
-					fmt.Println("Error: invalid number specified")
-					break
-				}
+			num, err := strconv.Atoi(args)
+			if err != nil {
+				fmt.Println("Error: invalid number specified")
+				break
 			}
 			if err := ws.back(num); err != nil {
 				fmt.Println("Error:", err)
