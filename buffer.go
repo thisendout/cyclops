@@ -1,8 +1,8 @@
 package main
 
 import (
-	"io"
 	"bytes"
+	"io"
 )
 
 // implements io.Writer to receive streaming logs

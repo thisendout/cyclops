@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPruneChanges(t *testing.T) {
