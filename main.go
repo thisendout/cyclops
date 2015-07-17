@@ -133,8 +133,11 @@ mainloop:
 				} else if strings.HasPrefix(input, ":from") {
 					line.AppendHistory(input)
 					image := strings.TrimPrefix(input, ":from ")
-					ws.SetImage(image)
-					fmt.Println("Image: ", image)
+					if err := ws.SetImage(image); err != nil {
+						fmt.Println("error setting image:", err)
+					} else {
+						fmt.Println("Image: ", image)
+					}
 				} else if strings.HasPrefix(input, ":print") {
 					line.AppendHistory(input)
 					if out, err := ws.Sprint(); err == nil {
@@ -156,7 +159,7 @@ mainloop:
 		}
 
 		if f, err := os.Create("/tmp/.sysrepl_history"); err != nil {
-			fmt.Println("error writing history", err)
+			fmt.Println("error writing history:", err)
 		} else {
 			line.WriteHistory(f)
 			f.Close()

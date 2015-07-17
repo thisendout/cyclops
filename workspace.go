@@ -42,6 +42,9 @@ func NewWorkspace(docker DockerService, mode string, image string) *Workspace {
 }
 
 func (w *Workspace) SetImage(image string) error {
+	if err := verifyImage(w.docker, image); err != nil {
+		return err
+	}
 	if w.currentImage == w.Image {
 		w.currentImage = image
 	}
