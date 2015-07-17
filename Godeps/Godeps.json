@@ -51,6 +51,10 @@
 			"Rev": "0dfe1f16045e9e460430ee10ec1dea8d86c9bd9f"
 		},
 		{
+			"ImportPath": "github.com/olekukonko/tablewriter",
+			"Rev": "bc39950e081b457853031334b3c8b95cdfe428ba"
+		},
+		{
 			"ImportPath": "github.com/peterh/liner",
 			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
 		},

@@ -33,7 +33,7 @@ func TestWorkspaceEval(t *testing.T) {
 	assert := assert.New(t)
 	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
 
-	res, err := ws.Eval("date")
+	res, err := ws.Eval("date", true)
 	assert.NoError(err)
 	assert.Equal("date", res.Command)
 	assert.Equal("ubuntu:trusty", res.Image)
@@ -93,7 +93,7 @@ func TestWorkflowEval(t *testing.T) {
 	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
 
 	for i := 1; i < 4; i++ {
-		res, err := ws.Eval(fmt.Sprintf("cmd%v", i))
+		res, err := ws.Eval(fmt.Sprintf("cmd%v", i), true)
 		assert.NoError(err)
 		assert.Equal(fmt.Sprintf("cmd%v", i), res.Command)
 		assert.Equal(0, res.Code)
@@ -112,7 +112,7 @@ func TestWorkflowEvalCommit(t *testing.T) {
 	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
 
 	for i := 1; i < 4; i++ {
-		res, err := ws.Eval(fmt.Sprintf("cmd%v", i))
+		res, err := ws.Eval(fmt.Sprintf("cmd%v", i), true)
 		assert.NoError(err)
 		assert.Equal(fmt.Sprintf("cmd%v", i), res.Command)
 		assert.Equal(0, res.Code)
@@ -137,14 +137,19 @@ func TestWorkflowBack(t *testing.T) {
 	assert := assert.New(t)
 	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
 
-	run, _ := ws.Run("cmd1")
+	run1, _ := ws.Run("cmd1")
 	ws.Run("cmd2")
 	ws.Run("cmd3")
 
-	err := ws.Back(2)
+	err := ws.back(2)
 	assert.NoError(err)
-	run, _ := ws.Run("cmd4")
+	run4, _ := ws.Run("cmd4")
 
-	assert.Equal(run4.Image, run1.Id)
-	assert.Equal(run4.Id, ws.currentImage)
+	expectedState := []string{"RUN cmd1", "RUN cmd4"}
+
+	assert.Equal(run4.Image, run1.NewImage)
+	assert.Equal(run4.NewImage, ws.currentImage)
+	assert.True(ws.history[1].Deleted)
+	assert.True(ws.history[2].Deleted)
+	assert.Equal(expectedState, ws.state)
 }

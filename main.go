@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"strconv"
 
 	"github.com/fatih/color"
 	"github.com/fsouza/go-dockerclient"
@@ -102,6 +103,8 @@ func parseCommand(input string) (string, string, error) {
 		return "help", "", nil
 	case ":print", ":p":
 		return "print", "", nil
+	case ":history", ":hs":
+		return "history", "", nil
 	case ":quit", ":q":
 		return "quit", "", nil
 	case ":eval", ":e":
@@ -122,6 +125,11 @@ func parseCommand(input string) (string, string, error) {
 	case ":write", ":w":
 		if len(parts) < 2 {
 			return "write", "", ErrMissingRequiredArg
+		}
+		return "write", parts[1], nil
+	case ":back", ":b":
+		if len(parts) < 2 {
+			return "back", "", ErrMissingRequiredArg
 		}
 		return "write", parts[1], nil
 	default:
@@ -176,7 +184,7 @@ mainloop:
 				fmt.Println("Committed:", id)
 			}
 		case "eval":
-			if res, err := ws.Eval(args); err != nil {
+			if res, err := ws.Eval(args, true); err != nil {
 				fmt.Println(err)
 			} else {
 				printResults(res)
@@ -187,6 +195,25 @@ mainloop:
 			} else {
 				fmt.Println("Image: ", args)
 			}
+		case "back":
+			var num int
+			count := strings.TrimPrefix(input, ":back ")
+			if count == ":back" {
+				num = 1
+			} else {
+				num, err = strconv.Atoi(count)
+				if err != nil {
+					fmt.Println("Error: invalid number specified")
+					break
+				}
+			}
+			if err := ws.back(num); err != nil {
+				fmt.Println("Error:", err)
+			} else {
+				fmt.Printf("went back %d steps\n", num)
+			}
+		case "history":
+			ws.PrintHistory()
 		case "print":
 			if out, err := ws.Sprint(); err == nil {
 				for _, line := range out {
