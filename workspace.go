@@ -1,15 +1,12 @@
 package main
 
 import (
-	"os"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"time"
-	"strconv"
 
 	"github.com/fsouza/go-dockerclient"
-	"github.com/olekukonko/tablewriter"
 )
 
 type EvalResult struct {
@@ -29,7 +26,6 @@ type Workspace struct {
 	Mode         string
 	Image        string //configured base image
 	currentImage string
-	state        []string
 	history      []*EvalResult
 	docker       DockerService
 }
@@ -39,7 +35,6 @@ func NewWorkspace(docker DockerService, mode string, image string) *Workspace {
 		Mode:         mode,
 		Image:        image,
 		currentImage: image,
-		state:        []string{},
 		history:      []*EvalResult{},
 		docker:       docker,
 	}
@@ -71,38 +66,44 @@ func (w *Workspace) CommitLast() (string, error) {
 		return "", err
 	}
 	lastResult.NewImage = image
-	w.state = append(w.state, "RUN "+lastResult.Command)
 	return image, nil
 }
 
 // Run runs Eval but also auto-commits on return code 0
 func (w *Workspace) Run(command string) (*EvalResult, error) {
-	res, err := w.Eval(command, false)
+	res, err := w.evalCommand(command)
 	if res.Code == 0 {
 		if imageId, err := w.commit(res.Id); err == nil {
 			res.NewImage = imageId
 		} else {
 			fmt.Println(err)
 		}
-		w.state = append(w.state, "RUN "+command)
 	}
+	w.history = append(w.history, res)
 	return res, err
 }
 
 // Eval runs the command and updates lastContainer
-func (w *Workspace) Eval(command string, adhoc bool) (*EvalResult, error) {
+func (w *Workspace) Eval(command string) (*EvalResult, error) {
+	res, err := w.evalCommand(command)
+	res.Deleted = true
+	w.history = append(w.history, res)
+	return res, err
+}
+
+func (w *Workspace) evalCommand(command string) (*EvalResult, error) {
 	res, err := Eval(w.docker, command, w.currentImage)
 	res.BaseImage = w.Image
-	if adhoc {
-		res.Deleted = true
-	}
-	w.history = append(w.history, &res)
 	return &res, err
 }
 
 func (w *Workspace) Sprint() ([]string, error) {
 	res := []string{"FROM " + w.Image}
-	res = append(res, w.state...)
+	for _, entry := range w.history {
+		if !entry.Deleted {
+			res = append(res, "RUN " + entry.Command)
+		}
+	}
 	return res, nil
 }
 
@@ -130,13 +131,10 @@ func (w *Workspace) commit(id string) (string, error) {
 }
 
 func (w *Workspace) back(n int) error {
-	if n > len(w.state) || n > len(w.history) {
+	var deleted = 0
+	if n > len(w.history) {
 		return errors.New("no history that far back")
 	}
-	// delete invalid state entries
-	w.state = w.state[:len(w.state)-n]
-	// soft delete invalid history entries
-	var deleted = 0
 	for i := len(w.history)-1; i > -1; i -= 1 {
 		if w.history[i].Deleted {
 			continue
@@ -144,7 +142,7 @@ func (w *Workspace) back(n int) error {
 		w.history[i].Deleted = true
 		deleted += 1
 		if deleted == n {
-			if i == 0 {
+			if w.Image == w.history[i].Image {
 				w.currentImage = w.Image
 			} else {
 				w.currentImage = w.history[i-1].NewImage
@@ -153,42 +151,4 @@ func (w *Workspace) back(n int) error {
 		}
 	}
 	return nil
-}
-
-func (w *Workspace) PrintHistory() {
-	var n = 1
-	var lastActive = 0
-	var rows = [][]string{}
-
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetBorder(false)
-	table.SetHeader([]string{"Item", "Command", "Exit", "Created Image"})
-
-	if len(w.history) == 0 {
-		return
-	}
-	for i, entry := range w.history {
-		var e = []string{}
-		if entry.Deleted {
-			e = append(e, "x")
-		} else {
-			e = append(e, strconv.Itoa(n))
-			n += 1
-			lastActive = i
-		}
-		e = append(e, entry.Command)
-		e = append(e, strconv.Itoa(entry.Code))
-		if len(entry.NewImage) == 64 {
-			e = append(e, entry.NewImage[:12])
-		} else {
-			e = append(e, entry.NewImage)
-		}
-		rows = append(rows, e)
-	}
-	if rows[lastActive][0] != "x" {
-		rows[lastActive][0] = ">" + rows[lastActive][0]
-	}
-	table.AppendBulk(rows)
-	table.Render()
-	fmt.Println("\nx - discarded, # - committed, > - active image")
 }

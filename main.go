@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"text/tabwriter"
 
 	"github.com/fatih/color"
 	"github.com/fsouza/go-dockerclient"
@@ -68,6 +69,39 @@ func printChanges(changes []docker.Change) {
 			color.Red("- %s", change.Path)
 		}
 	}
+}
+
+func printHistory(history []*EvalResult, currentImage string) {
+	var n = 1
+
+	w := new(tabwriter.Writer)
+	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+
+	// print header
+	fmt.Fprintln(w, "Item\tCommand\tExit\tCreated Image")
+
+	for _, entry := range history {
+		var row string
+		if entry.Deleted {
+			row = "\t"
+		} else {
+			if currentImage == entry.NewImage {
+				row += fmt.Sprintf(">%d\t", n)
+			} else {
+				row += fmt.Sprintf("%2d\t", n)
+			}
+			n += 1
+		}
+		row += fmt.Sprintf("%s\t", entry.Command)
+		row += fmt.Sprintf("%d\t", entry.Code)
+		if len(entry.NewImage) == 64 {
+			row += fmt.Sprintf("%s\t", entry.NewImage[:12])
+		} else {
+			row += fmt.Sprintf("%s\t", entry.NewImage)
+		}
+		fmt.Fprintln(w, row)
+	}
+	w.Flush()
 }
 
 func pruneChanges(changes []docker.Change) []docker.Change {
@@ -187,7 +221,7 @@ mainloop:
 				fmt.Println("Committed:", id)
 			}
 		case "eval":
-			if res, err := ws.Eval(args, true); err != nil {
+			if res, err := ws.Eval(args); err != nil {
 				fmt.Println(err)
 			} else {
 				printResults(res)
@@ -210,7 +244,7 @@ mainloop:
 				fmt.Printf("went back %d steps\n", num)
 			}
 		case "history":
-			ws.PrintHistory()
+			printHistory(ws.history, ws.currentImage)
 		case "print":
 			if out, err := ws.Sprint(); err == nil {
 				for _, line := range out {
