@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/thisendout/sysrepl",
+	"ImportPath": "github.com/thisendout/cyclops",
 	"GoVersion": "go1.4.2",
 	"Deps": [
 		{
@@ -55,12 +55,13 @@
 			"Rev": "1bb0d1c1a25ed393d8feb09bab039b2b1b1fbced"
 		},
 		{
-			"ImportPath": "github.com/rjeczalik/notify",
-			"Rev": "d7efb190f523e9c470ae3e0704494bfadd7151a0"
-		},
-		{
 			"ImportPath": "github.com/shiena/ansicolor",
 			"Rev": "8368d3b31cf6f2c2464c7a91675342c9a0ac6658"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.0",
+			"Rev": "232e8563676cd15c3a36ba5e675ad4312ac4cb11"
 		}
 	]
 }
