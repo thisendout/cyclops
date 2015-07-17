@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
@@ -96,6 +97,21 @@ func (w *Workspace) Sprint() ([]string, error) {
 	res := []string{"FROM " + w.Image}
 	res = append(res, w.state...)
 	return res, nil
+}
+
+// Write writes the output from Sprint to the provided file
+//  The file will be created, if necessary and overwrite the contents
+//  if it already exists
+func (w *Workspace) Write(path string) error {
+	lines, err := w.Sprint()
+	if err != nil {
+		return err
+	}
+	var out []byte
+	for _, line := range lines {
+		out = append(out, []byte(line+"\n")...)
+	}
+	return ioutil.WriteFile(path, out, 0644)
 }
 
 func (w *Workspace) commit(id string) (string, error) {
