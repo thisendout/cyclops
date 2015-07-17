@@ -24,12 +24,12 @@ var (
 
 func help() {
 	usage := `cyclops - help
-:help					  	    show help
-:from	 [image]			  set base image
+:help                 show help
+:from  [image]        set base image
 :run   [command ...]  execute shell command
 :commit               commit changes from last command
 :write [path/to/file] write state to file
-:quit							    quit cyclops - <ctrl-d>
+:quit                 quit cyclops - <ctrl-d>
 `
 	fmt.Println(usage)
 }
