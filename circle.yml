@@ -2,3 +2,11 @@ test:
   override:
     - go test -v ./...
     - go vet ./...
+deployment:
+  feature:
+    branch: /release\/.*/
+    commands:
+      - make build
+general:
+  artifacts:
+    - "cyclops_*"
