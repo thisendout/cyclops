@@ -241,7 +241,7 @@ mainloop:
 			if err := ws.back(num); err != nil {
 				fmt.Println("Error:", err)
 			} else {
-				fmt.Printf("went back %d steps\n", num)
+				fmt.Printf("Back %d to %s\n", num, ws.currentImage)
 			}
 		case "history":
 			printHistory(ws.history, ws.currentImage)
