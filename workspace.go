@@ -66,6 +66,7 @@ func (w *Workspace) CommitLast() (string, error) {
 		return "", err
 	}
 	lastResult.NewImage = image
+	lastResult.Deleted = false
 	return image, nil
 }
 
