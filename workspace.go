@@ -102,7 +102,7 @@ func (w *Workspace) Sprint() ([]string, error) {
 	res := []string{"FROM " + w.Image}
 	for _, entry := range w.history {
 		if !entry.Deleted {
-			res = append(res, "RUN " + entry.Command)
+			res = append(res, "RUN "+entry.Command)
 		}
 	}
 	return res, nil
@@ -136,18 +136,14 @@ func (w *Workspace) back(n int) error {
 	if n > len(w.history) {
 		return errors.New("no history that far back")
 	}
-	for i := len(w.history)-1; i > -1; i -= 1 {
+	for i := len(w.history) - 1; i > -1; i -= 1 {
 		if w.history[i].Deleted {
 			continue
 		}
 		w.history[i].Deleted = true
 		deleted += 1
 		if deleted == n {
-			if w.Image == w.history[i].Image {
-				w.currentImage = w.Image
-			} else {
-				w.currentImage = w.history[i-1].NewImage
-			}
+			w.currentImage = w.history[i].Image
 			break
 		}
 	}

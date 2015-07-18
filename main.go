@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/fatih/color"
