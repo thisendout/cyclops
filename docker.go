@@ -53,6 +53,7 @@ func Eval(d DockerService, command string, image string) (EvalResult, error) {
 	res := EvalResult{
 		Command: command,
 		Image:   image,
+		Deleted: false,
 	}
 
 	cwd, _ := os.Getwd()

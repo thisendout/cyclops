@@ -12,6 +12,7 @@ import (
 type EvalResult struct {
 	Command   string
 	Code      int
+	Deleted   bool
 	Duration  time.Duration
 	Log       *Buffer
 	Changes   []docker.Change
@@ -25,7 +26,6 @@ type Workspace struct {
 	Mode         string
 	Image        string //configured base image
 	currentImage string
-	state        []string
 	history      []*EvalResult
 	docker       DockerService
 }
@@ -35,7 +35,6 @@ func NewWorkspace(docker DockerService, mode string, image string) *Workspace {
 		Mode:         mode,
 		Image:        image,
 		currentImage: image,
-		state:        []string{},
 		history:      []*EvalResult{},
 		docker:       docker,
 	}
@@ -67,35 +66,45 @@ func (w *Workspace) CommitLast() (string, error) {
 		return "", err
 	}
 	lastResult.NewImage = image
-	w.state = append(w.state, "RUN "+lastResult.Command)
+	lastResult.Deleted = false
 	return image, nil
 }
 
 // Run runs Eval but also auto-commits on return code 0
 func (w *Workspace) Run(command string) (*EvalResult, error) {
-	res, err := w.Eval(command)
+	res, err := w.evalCommand(command)
 	if res.Code == 0 {
 		if imageId, err := w.commit(res.Id); err == nil {
 			res.NewImage = imageId
 		} else {
 			fmt.Println(err)
 		}
-		w.state = append(w.state, "RUN "+command)
 	}
+	w.history = append(w.history, res)
 	return res, err
 }
 
 // Eval runs the command and updates lastContainer
 func (w *Workspace) Eval(command string) (*EvalResult, error) {
+	res, err := w.evalCommand(command)
+	res.Deleted = true
+	w.history = append(w.history, res)
+	return res, err
+}
+
+func (w *Workspace) evalCommand(command string) (*EvalResult, error) {
 	res, err := Eval(w.docker, command, w.currentImage)
 	res.BaseImage = w.Image
-	w.history = append(w.history, &res)
 	return &res, err
 }
 
 func (w *Workspace) Sprint() ([]string, error) {
 	res := []string{"FROM " + w.Image}
-	res = append(res, w.state...)
+	for _, entry := range w.history {
+		if !entry.Deleted {
+			res = append(res, "RUN "+entry.Command)
+		}
+	}
 	return res, nil
 }
 
@@ -120,4 +129,23 @@ func (w *Workspace) commit(id string) (string, error) {
 		w.currentImage = imageId
 	}
 	return imageId, err
+}
+
+func (w *Workspace) back(n int) error {
+	var deleted = 0
+	if n > len(w.history) {
+		return errors.New("no history that far back")
+	}
+	for i := len(w.history) - 1; i > -1; i -= 1 {
+		if w.history[i].Deleted {
+			continue
+		}
+		w.history[i].Deleted = true
+		deleted += 1
+		if deleted == n {
+			w.currentImage = w.history[i].Image
+			break
+		}
+	}
+	return nil
 }

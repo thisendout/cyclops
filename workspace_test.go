@@ -85,6 +85,7 @@ func TestWorkflowRun(t *testing.T) {
 		assert.Equal(fmt.Sprintf("i%v", i), res.NewImage)
 
 		assert.Equal(fmt.Sprintf("i%v", i), ws.currentImage)
+		assert.False(res.Deleted)
 	}
 }
 
@@ -102,6 +103,7 @@ func TestWorkflowEval(t *testing.T) {
 		assert.Equal("ubuntu:trusty", res.BaseImage)
 		assert.Equal("ubuntu:trusty", res.Image)
 		assert.Equal("", res.NewImage)
+		assert.True(res.Deleted)
 
 		assert.Equal("ubuntu:trusty", ws.currentImage)
 	}
@@ -131,4 +133,61 @@ func TestWorkflowEvalCommit(t *testing.T) {
 		assert.Equal(fmt.Sprintf("i%v", i), image)
 	}
 
+}
+
+func TestEvalCommand(t *testing.T) {
+	assert := assert.New(t)
+	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+
+	for i := 1; i < 4; i++ {
+		res, err := ws.evalCommand(fmt.Sprintf("cmd%v", i))
+		assert.NoError(err)
+		assert.Equal(fmt.Sprintf("cmd%v", i), res.Command)
+		assert.Equal(0, res.Code)
+		assert.NotNil(res.Duration)
+		assert.Equal(fmt.Sprintf("c%v", i), res.Id)
+		assert.Equal("ubuntu:trusty", res.BaseImage)
+		assert.Equal("ubuntu:trusty", res.Image)
+		assert.Equal("", res.NewImage)
+		assert.False(res.Deleted)
+
+		assert.Equal("ubuntu:trusty", ws.currentImage)
+	}
+}
+
+func TestSprint(t *testing.T) {
+	assert := assert.New(t)
+	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+
+	ws.Eval("cmd1")
+	ws.Run("cmd2")
+	ws.Run("cmd3")
+
+	state, err := ws.Sprint()
+	assert.NoError(err)
+	expectedState := []string{"FROM ubuntu:trusty", "RUN cmd2", "RUN cmd3"}
+	assert.Equal(expectedState, state)
+}
+
+func TestWorkflowBack(t *testing.T) {
+	assert := assert.New(t)
+	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+
+	run1, _ := ws.Run("cmd1")
+	ws.Run("cmd2")
+	ws.Run("cmd3")
+
+	err := ws.back(2)
+	assert.NoError(err)
+	run4, _ := ws.Run("cmd4")
+
+	state, err := ws.Sprint()
+	assert.NoError(err)
+	expectedState := []string{"FROM ubuntu:trusty", "RUN cmd1", "RUN cmd4"}
+
+	assert.Equal(run4.Image, run1.NewImage)
+	assert.Equal(run4.NewImage, ws.currentImage)
+	assert.True(ws.history[1].Deleted)
+	assert.True(ws.history[2].Deleted)
+	assert.Equal(expectedState, state)
 }

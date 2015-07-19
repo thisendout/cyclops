@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/fatih/color"
 	"github.com/fsouza/go-dockerclient"
@@ -24,12 +26,15 @@ var (
 
 func help() {
 	usage := `cyclops - help
-:help                 show help
-:from  [image]        set base image
-:run   [command ...]  execute shell command
-:commit               commit changes from last command
-:write [path/to/file] write state to file
-:quit                 quit cyclops - <ctrl-d>
+:help|:h                     show help
+:from|:f      [image]        set base image
+:eval|:e      [command ...]  execute shell command (ephemeral)
+:run|:r       [command ...]  execute shell command (auto commits image)
+:commit|:c                   commit changes from last command
+:back|:b      [num]          go back in the history (default: 1)
+:history|:hs                 show the current history
+:write|:w     [path/to/file] write state to file
+:quit|:q                     quit cyclops - <ctrl-d>
 `
 	fmt.Println(usage)
 }
@@ -64,6 +69,39 @@ func printChanges(changes []docker.Change) {
 			color.Red("- %s", change.Path)
 		}
 	}
+}
+
+func printHistory(history []*EvalResult, currentImage string) {
+	var n = 1
+
+	w := new(tabwriter.Writer)
+	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+
+	// print header
+	fmt.Fprintln(w, "Item\tCommand\tExit\tCreated Image")
+
+	for _, entry := range history {
+		var row string
+		if entry.Deleted {
+			row = "\t"
+		} else {
+			if currentImage == entry.NewImage {
+				row += fmt.Sprintf(">%d\t", n)
+			} else {
+				row += fmt.Sprintf("%2d\t", n)
+			}
+			n += 1
+		}
+		row += fmt.Sprintf("%s\t", entry.Command)
+		row += fmt.Sprintf("%d\t", entry.Code)
+		if len(entry.NewImage) == 64 {
+			row += fmt.Sprintf("%s\t", entry.NewImage[:12])
+		} else {
+			row += fmt.Sprintf("%s\t", entry.NewImage)
+		}
+		fmt.Fprintln(w, row)
+	}
+	w.Flush()
 }
 
 func pruneChanges(changes []docker.Change) []docker.Change {
@@ -102,6 +140,8 @@ func parseCommand(input string) (string, string, error) {
 		return "help", "", nil
 	case ":print", ":p":
 		return "print", "", nil
+	case ":history", ":hs":
+		return "history", "", nil
 	case ":quit", ":q":
 		return "quit", "", nil
 	case ":eval", ":e":
@@ -124,6 +164,11 @@ func parseCommand(input string) (string, string, error) {
 			return "write", "", ErrMissingRequiredArg
 		}
 		return "write", parts[1], nil
+	case ":back", ":b":
+		if len(parts) < 2 {
+			return "back", "1", nil
+		}
+		return "back", parts[1], nil
 	default:
 		return parts[0], "", ErrInvalidCommand
 	}
@@ -187,6 +232,19 @@ mainloop:
 			} else {
 				fmt.Println("Image: ", args)
 			}
+		case "back":
+			num, err := strconv.Atoi(args)
+			if err != nil {
+				fmt.Println("Error: invalid number specified")
+				break
+			}
+			if err := ws.back(num); err != nil {
+				fmt.Println("Error:", err)
+			} else {
+				fmt.Printf("Back %d to %s\n", num, ws.currentImage)
+			}
+		case "history":
+			printHistory(ws.history, ws.currentImage)
 		case "print":
 			if out, err := ws.Sprint(); err == nil {
 				for _, line := range out {

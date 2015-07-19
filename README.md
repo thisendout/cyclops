@@ -50,7 +50,11 @@ cyclops> :print
 
 * ```:commit``` - Commits the container created from the previous command and uses it as the base image for the next command.
 
+* ```:back``` - Reverts the last committed change.
+
 * ```:print``` - Prints the source/commands run in the session formatted for the session type.
+
+* ```:history``` - Displays both ephemeral and committed commands for a given session.
 
 * ```:write filename``` - Writes the source/commands to a file given the session type.
 
