@@ -25,7 +25,7 @@ type EvalResult struct {
 type Workspace struct {
 	Mode         string
 	Image        string //configured base image
-	currentImage string
+	CurrentImage string
 	history      []*EvalResult
 	docker       DockerService
 }
@@ -34,7 +34,7 @@ func NewWorkspace(docker DockerService, mode string, image string) *Workspace {
 	ws := &Workspace{
 		Mode:         mode,
 		Image:        image,
-		currentImage: image,
+		CurrentImage: image,
 		history:      []*EvalResult{},
 		docker:       docker,
 	}
@@ -45,8 +45,8 @@ func (w *Workspace) SetImage(image string) error {
 	if err := verifyImage(w.docker, image); err != nil {
 		return err
 	}
-	if w.currentImage == w.Image {
-		w.currentImage = image
+	if w.CurrentImage == w.Image {
+		w.CurrentImage = image
 	}
 	w.Image = image
 	return nil
@@ -93,7 +93,7 @@ func (w *Workspace) Eval(command string) (*EvalResult, error) {
 }
 
 func (w *Workspace) evalCommand(command string) (*EvalResult, error) {
-	res, err := Eval(w.docker, command, w.currentImage)
+	res, err := Eval(w.docker, command, w.CurrentImage)
 	res.BaseImage = w.Image
 	return &res, err
 }
@@ -143,7 +143,7 @@ func (w *Workspace) Write(path string) error {
 func (w *Workspace) commit(id string) (string, error) {
 	imageId, err := CommitContainer(w.docker, id)
 	if err == nil {
-		w.currentImage = imageId
+		w.CurrentImage = imageId
 	}
 	return imageId, err
 }
@@ -161,7 +161,7 @@ func (w *Workspace) back(n int) error {
 		w.history[i].Deleted = true
 		deleted += 1
 		if deleted == n {
-			w.currentImage = w.history[i].Image
+			w.CurrentImage = w.history[i].Image
 			break
 		}
 	}

@@ -14,7 +14,7 @@ func TestNewWorkspace(t *testing.T) {
 
 	assert.Equal("dockerfile", ws.Mode)
 	assert.Equal("ubuntu:trusty", ws.Image)
-	assert.Equal("ubuntu:trusty", ws.currentImage)
+	assert.Equal("ubuntu:trusty", ws.CurrentImage)
 }
 
 func TestSetImage(t *testing.T) {
@@ -22,11 +22,11 @@ func TestSetImage(t *testing.T) {
 	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
 
 	assert.Equal("ubuntu:trusty", ws.Image)
-	assert.Equal("ubuntu:trusty", ws.currentImage)
+	assert.Equal("ubuntu:trusty", ws.CurrentImage)
 
 	ws.SetImage("fedora")
 	assert.Equal("fedora", ws.Image)
-	assert.Equal("fedora", ws.currentImage)
+	assert.Equal("fedora", ws.CurrentImage)
 }
 
 func TestWorkspaceEval(t *testing.T) {
@@ -85,7 +85,7 @@ func TestWorkflowRun(t *testing.T) {
 		}
 		assert.Equal(fmt.Sprintf("i%v", i), res.NewImage)
 
-		assert.Equal(fmt.Sprintf("i%v", i), ws.currentImage)
+		assert.Equal(fmt.Sprintf("i%v", i), ws.CurrentImage)
 		assert.False(res.Deleted)
 		assert.Len(mockdock.Containers, i)
 		assert.Len(mockdock.Images, i)
@@ -117,7 +117,7 @@ func TestWorkflowEval(t *testing.T) {
 		assert.Equal("", res.NewImage)
 		assert.True(res.Deleted)
 
-		assert.Equal("ubuntu:trusty", ws.currentImage)
+		assert.Equal("ubuntu:trusty", ws.CurrentImage)
 		assert.Len(mockdock.Containers, i)
 		assert.Len(mockdock.Images, 0)
 	}
@@ -170,7 +170,7 @@ func TestEvalCommand(t *testing.T) {
 		assert.Equal("", res.NewImage)
 		assert.False(res.Deleted)
 
-		assert.Equal("ubuntu:trusty", ws.currentImage)
+		assert.Equal("ubuntu:trusty", ws.CurrentImage)
 	}
 }
 
@@ -205,7 +205,7 @@ func TestWorkflowBack(t *testing.T) {
 	expectedState := []string{"FROM ubuntu:trusty", "RUN cmd1", "RUN cmd4"}
 
 	assert.Equal(run4.Image, run1.NewImage)
-	assert.Equal(run4.NewImage, ws.currentImage)
+	assert.Equal(run4.NewImage, ws.CurrentImage)
 	assert.True(ws.history[1].Deleted)
 	assert.True(ws.history[2].Deleted)
 	assert.Equal(expectedState, state)
