@@ -53,7 +53,7 @@ func (w *Workspace) SetImage(image string) error {
 }
 
 func (w *Workspace) CommitLast() (string, error) {
-	var history = w.history
+	history := w.history
 	if len(history) == 0 {
 		return "", errors.New("No container found to commit")
 	}
@@ -107,7 +107,7 @@ type ResetResult struct {
 
 // Reset cleans up all containers in the history
 func (w *Workspace) Reset() (results []ResetResult) {
-	var history = w.history
+	history := w.history
 	for i, entry := range history {
 		if !history[i].Deleted {
 			err := RemoveContainer(w.docker, entry.Id)
@@ -153,8 +153,8 @@ func (w *Workspace) commit(id string) (string, error) {
 }
 
 func (w *Workspace) back(n int) error {
-	var deleted = 0
-	var history = w.history
+	history := w.history
+	deleted := 0
 	if n > len(history) {
 		return errors.New("no history that far back")
 	}

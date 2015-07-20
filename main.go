@@ -72,7 +72,7 @@ func printChanges(changes []docker.Change) {
 }
 
 func printHistory(history []EvalResult, currentImage string) {
-	var n = 1
+	n := 1
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
@@ -105,8 +105,8 @@ func printHistory(history []EvalResult, currentImage string) {
 }
 
 func pruneChanges(changes []docker.Change) []docker.Change {
-	var c = []docker.Change{}
 	var p string
+	c := []docker.Change{}
 	for i := len(changes) - 1; i > 0; i -= 1 {
 		if changes[i].Kind == 0 {
 			if !strings.Contains(p, changes[i].Path) {
