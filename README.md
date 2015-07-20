@@ -77,13 +77,11 @@ When you're done, use `:print` and `:write` to get a Dockerfile representing you
 
 ## Commands
 
-* ```:from name``` - Accepts a single argument of a Docker image name to use for execution of commands.
-  * Consumers:
-    * Dockerfile (```FROM```)
+* ```:help``` - Displays help screen listing commands and descriptions.
 
-* ```:run command``` - Runs a shell command against an image and displays the STDOUT and filesystem diff.
-  * Consumers:
-    * Dockerfile (```RUN```)
+* ```:from name``` - Accepts a single argument of a Docker image name to use for execution of commands. Translates to ```FROM``` in Dockerfile.
+
+* ```:run command``` - Runs a shell command against an image and displays the STDOUT and filesystem diff. Translates to ```RUN``` in Dockerfile.
 
 * ```:commit``` - Commits the container created from the previous command and uses it as the base image for the next command.
 
