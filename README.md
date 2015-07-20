@@ -22,7 +22,7 @@ Make sure you have a DOCKER_HOST env variable set. [docker-machine](https://gith
 
 ```
 $ docker-machine env dev
-export DOCKER_TLS_VERIFY=yes
+export DOCKER_TLS_VERIFY=1
 export DOCKER_CERT_PATH=/home/cyclops/.docker/machine/machines/dev
 export DOCKER_HOST=tcp://192.168.99.100:2376
 $ docker pull ubuntu:trusty
@@ -33,7 +33,7 @@ Launch the repl and try some bash commands.
 ```
 $ cyclops
 cyclops> :help
-cyclops> :run apt-get update -y
+cyclops> :run apt-get update
 cyclops> :run apt-get install -y tmux
 cyclops> :print
 ```
@@ -79,7 +79,7 @@ When you're done, use `:print` and `:write` to get a Dockerfile representing you
 
 * ```:help``` - Displays help screen listing commands and descriptions.
 
-* ```:from name``` - Accepts a single argument of a Docker image name to use for execution of commands. Translates to ```FROM``` in Dockerfile.
+* ```:from name``` - Accepts a single argument of a Docker image name to use for execution of commands.  Wipes any history that relies on the original base image.  Translates to ```FROM``` in Dockerfile.
 
 * ```:run command``` - Runs a shell command against an image and displays the STDOUT and filesystem diff. Translates to ```RUN``` in Dockerfile.
 
