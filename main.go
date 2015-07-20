@@ -71,7 +71,7 @@ func printChanges(changes []docker.Change) {
 	}
 }
 
-func printHistory(history []*EvalResult, currentImage string) {
+func printHistory(history []*EvalResult, CurrentImage string) {
 	var n = 1
 
 	w := new(tabwriter.Writer)
@@ -85,7 +85,7 @@ func printHistory(history []*EvalResult, currentImage string) {
 		if entry.Deleted {
 			row = "\t"
 		} else {
-			if currentImage == entry.NewImage {
+			if CurrentImage == entry.NewImage {
 				row += fmt.Sprintf(">%d\t", n)
 			} else {
 				row += fmt.Sprintf("%2d\t", n)
@@ -267,10 +267,10 @@ mainloop:
 			if err := ws.back(num); err != nil {
 				fmt.Println("Error:", err)
 			} else {
-				fmt.Printf("Back %d to %s\n", num, ws.currentImage)
+				fmt.Printf("Back %d to %s\n", num, ws.CurrentImage)
 			}
 		case "history":
-			printHistory(ws.history, ws.currentImage)
+			printHistory(ws.history, ws.CurrentImage)
 		case "print":
 			if out, err := ws.Sprint(); err == nil {
 				for _, line := range out {
