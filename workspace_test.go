@@ -67,7 +67,8 @@ func TestWorkspaceWrite(t *testing.T) {
 // Workflow tests
 func TestWorkflowRun(t *testing.T) {
 	assert := assert.New(t)
-	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+	mockdock := NewMockDockerClient()
+	ws := NewWorkspace(mockdock, "dockerfile", "ubuntu:trusty")
 
 	for i := 1; i < 4; i++ {
 		res, err := ws.Run(fmt.Sprintf("cmd%v", i))
@@ -86,12 +87,23 @@ func TestWorkflowRun(t *testing.T) {
 
 		assert.Equal(fmt.Sprintf("i%v", i), ws.currentImage)
 		assert.False(res.Deleted)
+		assert.Len(mockdock.Containers, i)
+		assert.Len(mockdock.Images, i)
+	}
+
+	results := ws.Reset()
+	for _, res := range results {
+		assert.NoError(res.Err)
+	}
+	for _, entry := range ws.history {
+		assert.True(entry.Deleted)
 	}
 }
 
 func TestWorkflowEval(t *testing.T) {
 	assert := assert.New(t)
-	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+	mockdock := NewMockDockerClient()
+	ws := NewWorkspace(mockdock, "dockerfile", "ubuntu:trusty")
 
 	for i := 1; i < 4; i++ {
 		res, err := ws.Eval(fmt.Sprintf("cmd%v", i))
@@ -106,12 +118,15 @@ func TestWorkflowEval(t *testing.T) {
 		assert.True(res.Deleted)
 
 		assert.Equal("ubuntu:trusty", ws.currentImage)
+		assert.Len(mockdock.Containers, i)
+		assert.Len(mockdock.Images, 0)
 	}
 }
 
 func TestWorkflowEvalCommit(t *testing.T) {
 	assert := assert.New(t)
-	ws := NewWorkspace(NewMockDockerClient(), "dockerfile", "ubuntu:trusty")
+	mockdock := NewMockDockerClient()
+	ws := NewWorkspace(mockdock, "dockerfile", "ubuntu:trusty")
 
 	for i := 1; i < 4; i++ {
 		res, err := ws.Eval(fmt.Sprintf("cmd%v", i))
@@ -127,10 +142,14 @@ func TestWorkflowEvalCommit(t *testing.T) {
 			assert.Equal(fmt.Sprintf("i%v", (i-1)), res.Image)
 		}
 		assert.Equal("", res.NewImage)
+		assert.Len(mockdock.Containers, i)
+		assert.Len(mockdock.Images, i-1)
 
 		image, err := ws.CommitLast()
 		assert.NoError(err)
 		assert.Equal(fmt.Sprintf("i%v", i), image)
+		assert.Len(mockdock.Containers, i)
+		assert.Len(mockdock.Images, i)
 	}
 
 }

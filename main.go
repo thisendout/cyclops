@@ -174,6 +174,19 @@ func parseCommand(input string) (string, string, error) {
 	}
 }
 
+func preExit(ws *Workspace) {
+	fmt.Println("Cleaning up...")
+	lines := ws.Reset()
+	for _, line := range lines {
+		if line.Err != nil {
+			fmt.Println(line.Err)
+		} else {
+			fmt.Printf("Deleted: %s\n", line.Id)
+		}
+	}
+	fmt.Println("Done")
+}
+
 func main() {
 	dc, err := NewDockerClient(os.Getenv("DOCKER_HOST"), os.Getenv("DOCKER_TLS_VERIFY"), os.Getenv("DOCKER_CERT_PATH"))
 	if err != nil {
@@ -195,6 +208,8 @@ func main() {
 		f.Close()
 	}
 
+	defer preExit(ws)
+
 mainloop:
 	for {
 		input, err := line.Prompt(prompt + "> ")
@@ -212,7 +227,6 @@ mainloop:
 			help()
 			continue
 		case "quit":
-			fmt.Println("Exiting...")
 			break mainloop
 		case "commit":
 			if id, err := ws.CommitLast(); err != nil {
