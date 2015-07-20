@@ -179,9 +179,12 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	} else {
-		fmt.Println("Connected to docker daemon...")
 	}
+	if err := dc.Ping(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println("Connected to docker daemon...")
 
 	ws := NewWorkspace(dc, "bash", defaultImage)
 
