@@ -26,20 +26,20 @@ var (
 
 func help() {
 	usage := `cyclops - help
-:help|:h                     show help
-:from|:f      [image]        set base image
-:eval|:e      [command ...]  execute shell command (ephemeral)
-:run|:r       [command ...]  execute shell command (auto commits image)
-:commit|:c                   commit changes from last command
-:back|:b      [num]          go back in the history (default: 1)
-:history|:hs                 show the current history
-:write|:w     [path/to/file] write state to file
-:quit|:q                     quit cyclops - <ctrl-d>
+:h, :help                     show help
+:f, :from      [image]        set base image
+:e, :eval      [command ...]  execute shell command (ephemeral)
+:r, :run       [command ...]  execute shell command (auto commits image)
+:c, :commit                   commit changes from last command
+:b, :back      [num]          go back in the history (default: 1)
+:hs, :history                 show the current history
+:w, :write     [path/to/file] write state to file
+:q, :quit                     quit cyclops - <ctrl-d>
 `
 	fmt.Println(usage)
 }
 
-func printResults(res *EvalResult) {
+func printResults(res EvalResult) {
 	fmt.Println()
 	fmt.Println("Exit:", res.Code)
 	fmt.Println("Took:", res.Duration)
@@ -71,8 +71,8 @@ func printChanges(changes []docker.Change) {
 	}
 }
 
-func printHistory(history []*EvalResult, CurrentImage string) {
-	var n = 1
+func printHistory(history []EvalResult, currentImage string) {
+	n := 1
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
@@ -85,7 +85,7 @@ func printHistory(history []*EvalResult, CurrentImage string) {
 		if entry.Deleted {
 			row = "\t"
 		} else {
-			if CurrentImage == entry.NewImage {
+			if currentImage == entry.NewImage {
 				row += fmt.Sprintf(">%d\t", n)
 			} else {
 				row += fmt.Sprintf("%2d\t", n)
@@ -105,8 +105,8 @@ func printHistory(history []*EvalResult, CurrentImage string) {
 }
 
 func pruneChanges(changes []docker.Change) []docker.Change {
-	var c = []docker.Change{}
 	var p string
+	c := []docker.Change{}
 	for i := len(changes) - 1; i > 0; i -= 1 {
 		if changes[i].Kind == 0 {
 			if !strings.Contains(p, changes[i].Path) {
