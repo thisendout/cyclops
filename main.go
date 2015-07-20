@@ -244,6 +244,8 @@ mainloop:
 				printResults(res)
 			}
 		case "from":
+			fmt.Println("Wiping history to set new base image")
+			ws.Reset()
 			if err := ws.SetImage(args); err != nil {
 				fmt.Println("error setting image:", err)
 			} else {
