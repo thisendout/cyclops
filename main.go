@@ -244,7 +244,7 @@ mainloop:
 				printResults(res)
 			}
 		case "from":
-			if ws.currentImage != ws.Image {
+			if ws.CurrentImage != ws.Image {
 				confirm, err := line.Prompt("Changes will be lost. Continue? <y>: ")
 				if err != nil || confirm != "y" {
 					fmt.Println("Aborted")

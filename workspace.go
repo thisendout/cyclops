@@ -112,7 +112,7 @@ func (w *Workspace) Reset() (results []ResetResult) {
 		}
 	}
 	w.history = []*EvalResult{}
-	w.currentImage = w.Image
+	w.CurrentImage = w.Image
 	return
 }
 
