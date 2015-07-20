@@ -26,7 +26,7 @@ type Workspace struct {
 	Mode         string
 	Image        string //configured base image
 	currentImage string
-	history      []*EvalResult
+	history      []EvalResult
 	docker       DockerService
 }
 
@@ -35,7 +35,7 @@ func NewWorkspace(docker DockerService, mode string, image string) *Workspace {
 		Mode:         mode,
 		Image:        image,
 		currentImage: image,
-		history:      []*EvalResult{},
+		history:      []EvalResult{},
 		docker:       docker,
 	}
 	return ws
@@ -53,25 +53,27 @@ func (w *Workspace) SetImage(image string) error {
 }
 
 func (w *Workspace) CommitLast() (string, error) {
-	if len(w.history) == 0 {
+	var history = w.history
+	if len(history) == 0 {
 		return "", errors.New("No container found to commit")
 	}
-	lastResult := w.history[len(w.history)-1]
-	if lastResult.NewImage != "" {
+	lastResult := len(w.history)-1
+	if history[lastResult].NewImage != "" {
 		return "", errors.New("Container already committed")
 	}
 
-	image, err := w.commit(lastResult.Id)
+	image, err := w.commit(history[lastResult].Id)
 	if err != nil {
 		return "", err
 	}
-	lastResult.NewImage = image
-	lastResult.Deleted = false
+	history[lastResult].NewImage = image
+	history[lastResult].Deleted = false
+	w.history = history
 	return image, nil
 }
 
 // Run runs Eval but also auto-commits on return code 0
-func (w *Workspace) Run(command string) (*EvalResult, error) {
+func (w *Workspace) Run(command string) (EvalResult, error) {
 	res, err := w.evalCommand(command)
 	if res.Code == 0 {
 		if imageId, err := w.commit(res.Id); err == nil {
@@ -85,17 +87,17 @@ func (w *Workspace) Run(command string) (*EvalResult, error) {
 }
 
 // Eval runs the command and updates lastContainer
-func (w *Workspace) Eval(command string) (*EvalResult, error) {
+func (w *Workspace) Eval(command string) (EvalResult, error) {
 	res, err := w.evalCommand(command)
 	res.Deleted = true
 	w.history = append(w.history, res)
 	return res, err
 }
 
-func (w *Workspace) evalCommand(command string) (*EvalResult, error) {
+func (w *Workspace) evalCommand(command string) (EvalResult, error) {
 	res, err := Eval(w.docker, command, w.currentImage)
 	res.BaseImage = w.Image
-	return &res, err
+	return res, err
 }
 
 type ResetResult struct {
@@ -105,13 +107,15 @@ type ResetResult struct {
 
 // Reset cleans up all containers in the history
 func (w *Workspace) Reset() (results []ResetResult) {
-	for _, entry := range w.history {
-		if !entry.Deleted {
+	var history = w.history
+	for i, entry := range history {
+		if !history[i].Deleted {
 			err := RemoveContainer(w.docker, entry.Id)
 			results = append(results, ResetResult{Err: err, Id: entry.Id})
-			entry.Deleted = true
+			history[i].Deleted = true
 		}
 	}
+	w.history = history
 	return
 }
 
@@ -150,20 +154,22 @@ func (w *Workspace) commit(id string) (string, error) {
 
 func (w *Workspace) back(n int) error {
 	var deleted = 0
-	if n > len(w.history) {
+	var history = w.history
+	if n > len(history) {
 		return errors.New("no history that far back")
 	}
-	for i := len(w.history) - 1; i > -1; i -= 1 {
-		if w.history[i].Deleted {
+	for i := len(history) - 1; i > -1; i -= 1 {
+		if history[i].Deleted {
 			continue
 		}
-		RemoveContainer(w.docker, w.history[i].Id)
-		w.history[i].Deleted = true
+		RemoveContainer(w.docker, history[i].Id)
+		history[i].Deleted = true
 		deleted += 1
 		if deleted == n {
-			w.currentImage = w.history[i].Image
+			w.currentImage = history[i].Image
 			break
 		}
 	}
+	w.history = history
 	return nil
 }
