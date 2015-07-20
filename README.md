@@ -3,7 +3,12 @@
 
 A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.  Faster than a VM, safer than production, more feedback than a local terminal.
 
-cyclops executes commands inside of a docker container and provides immediate feedback.  Successful runs create a new base image used for subsequent runs automatically.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile or shell script and/or save the resulting docker container for later.
+cyclops executes commands inside of a docker container and provides immediate feedback.  Commit changes to incrementally build a final image or Dockerfile.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile and/or save the resulting docker container for later.
+
+cyclops is designed to help with:
+ * exploring shell commands in a safe, quick manner
+ * building Dockerfiles
+ * testing the execution of scripts and automation
 
 ## Getting Started
 
@@ -33,12 +38,44 @@ cyclops> :run apt-get install -y tmux
 cyclops> :print
 ```
 
-## Commands
+### Workflows
 
-* ```:type arg``` - Sets the session to display/export it's state to a given format.
-  * Arguments:
-    * shell - export for the bash shell
-    * dockerfile - export for a Dockerfile
+cyclops aims to be flexible in how you explore and commit changes to your environment.
+
+Entering a command into the cyclops prompt will execute the command without committing the change.  Use it for exploration and testing.
+
+```
+cyclops> dpkg -l | grep tmux     # no tmux installed
+cyclops> apt-cache search tmux
+...
+cyclops> apt-get install -y tmux
+...
+cyclops> dpkg -l | grep tmux     # no tmux installed because apt-get install was ephemeral
+```
+
+`:commit` commits the change from the previous execution, regardless of exit code.
+```
+cyclops> dpkg -l | grep tmux     # no tmux installed
+cyclops> apt-cache search tmux
+...
+cyclops> apt-get install -y tmux
+...
+cyclops> :commit                 # commit the changes from the previous step
+cyclops> dpkg -l | grep tmux     # tmux is now installed
+```
+
+`:run` auto-commits the change if the command returns with exit `0`.
+```
+cyclops> dpkg -l | grep tmux     # no tmux installed
+cyclops> :run apt-get install -y tmux
+...
+cyclops> dpkg -l | grep tmux     # tmux is now installed
+```
+If a `:run` returns non-zero but you want to commit it anyway, follow it up with `:commit`.
+
+When you're done, use `:print` and `:write` to get a Dockerfile representing your commit changes.  cyclops also prints the container and image ids at every step if you want to use the resulting artifacts directly.
+
+## Commands
 
 * ```:from name``` - Accepts a single argument of a Docker image name to use for execution of commands.
   * Consumers:
@@ -64,9 +101,9 @@ cyclops> :print
 
 For each :run executed, cyclops reports:
  * Exit Code
- * Execution Duration
+ * Execution duration
  * Docker image used as base
- * Committed docker image ID with changes (if exit was 0)
+ * Committed docker image ID with changes (if the changes were committed)
  * List of filesystem changes
 
 
