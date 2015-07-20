@@ -244,6 +244,15 @@ mainloop:
 				printResults(res)
 			}
 		case "from":
+			if ws.currentImage != ws.Image {
+				confirm, err := line.Prompt("Changes will be lost. Continue? <y>: ")
+				if err != nil || confirm != "y" {
+					fmt.Println("Aborted")
+					continue
+				}
+				fmt.Println("Wiping history to set new base image")
+			}
+			ws.Reset()
 			if err := ws.SetImage(args); err != nil {
 				fmt.Println("error setting image:", err)
 			} else {

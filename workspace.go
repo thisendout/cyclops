@@ -109,9 +109,10 @@ func (w *Workspace) Reset() (results []ResetResult) {
 		if !entry.Deleted {
 			err := RemoveContainer(w.docker, entry.Id)
 			results = append(results, ResetResult{Err: err, Id: entry.Id})
-			entry.Deleted = true
 		}
 	}
+	w.history = []*EvalResult{}
+	w.currentImage = w.Image
 	return
 }
 
