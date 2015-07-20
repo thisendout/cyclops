@@ -127,6 +127,7 @@ func (w *Workspace) commit(id string) (string, error) {
 	imageId, err := CommitContainer(w.docker, id)
 	if err == nil {
 		w.currentImage = imageId
+		RemoveContainer(w.docker, id)
 	}
 	return imageId, err
 }

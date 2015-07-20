@@ -84,6 +84,8 @@ type MockDockerClient struct {
 	FailInspect  bool
 	PleaseReturn int
 	lastId       int
+	Containers   []*docker.Container
+	Images       []*docker.Image
 }
 
 func NewMockDockerClient() *MockDockerClient {
@@ -112,9 +114,12 @@ func (m *MockDockerClient) CommitContainer(opts docker.CommitContainerOptions) (
 	if m.FailCommit {
 		return &docker.Image{}, errors.New("MOCK: Failed to commit")
 	}
-	return &docker.Image{
+	image := &docker.Image{
 		ID: strings.Replace(opts.Container, "c", "i", 1),
-	}, nil
+	}
+	m.Images = append(m.Images, image)
+
+	return image, nil
 }
 
 func (m *MockDockerClient) ContainerChanges(string) ([]docker.Change, error) {
@@ -129,15 +134,32 @@ func (m *MockDockerClient) CreateContainer(docker.CreateContainerOptions) (*dock
 		return &docker.Container{}, errors.New("MOCK: Failed to create container")
 	}
 	m.lastId++
-	return &docker.Container{
+	cont := &docker.Container{
 		ID: fmt.Sprintf("c%v", m.lastId),
-	}, nil
+	}
+	m.Containers = append(m.Containers, cont)
+	return cont, nil
 }
 
-func (m *MockDockerClient) RemoveContainer(docker.RemoveContainerOptions) error {
+func (m *MockDockerClient) RemoveContainer(opts docker.RemoveContainerOptions) error {
 	if m.FailRemove {
 		return errors.New("MOCK: Failed to remove container")
 	}
+	var newContainers []*docker.Container
+	if len(m.Containers) == 1 {
+		m.Containers = []*docker.Container{}
+		return nil
+	}
+	for i, c := range m.Containers {
+		if c.ID == opts.ID {
+			newContainers = m.Containers[:i]
+			if i < len(m.Containers)-1 {
+				newContainers = append(newContainers, m.Containers[(i+1):]...)
+			}
+			break
+		}
+	}
+	m.Containers = newContainers
 	return nil
 }
 
