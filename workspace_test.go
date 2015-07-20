@@ -87,8 +87,16 @@ func TestWorkflowRun(t *testing.T) {
 
 		assert.Equal(fmt.Sprintf("i%v", i), ws.currentImage)
 		assert.False(res.Deleted)
-		assert.Len(mockdock.Containers, 0)
+		assert.Len(mockdock.Containers, i)
 		assert.Len(mockdock.Images, i)
+	}
+
+	results := ws.Reset()
+	for _, res := range results {
+		assert.NoError(res.Err)
+	}
+	for _, entry := range ws.history {
+		assert.True(entry.Deleted)
 	}
 }
 
@@ -134,13 +142,13 @@ func TestWorkflowEvalCommit(t *testing.T) {
 			assert.Equal(fmt.Sprintf("i%v", (i-1)), res.Image)
 		}
 		assert.Equal("", res.NewImage)
-		assert.Len(mockdock.Containers, 1)
+		assert.Len(mockdock.Containers, i)
 		assert.Len(mockdock.Images, i-1)
 
 		image, err := ws.CommitLast()
 		assert.NoError(err)
 		assert.Equal(fmt.Sprintf("i%v", i), image)
-		assert.Len(mockdock.Containers, 0)
+		assert.Len(mockdock.Containers, i)
 		assert.Len(mockdock.Images, i)
 	}
 

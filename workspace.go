@@ -98,6 +98,23 @@ func (w *Workspace) evalCommand(command string) (*EvalResult, error) {
 	return &res, err
 }
 
+type ResetResult struct {
+	Err error
+	Id  string
+}
+
+// Reset cleans up all containers in the history
+func (w *Workspace) Reset() (results []ResetResult) {
+	for _, entry := range w.history {
+		if !entry.Deleted {
+			err := RemoveContainer(w.docker, entry.Id)
+			results = append(results, ResetResult{Err: err, Id: entry.Id})
+			entry.Deleted = true
+		}
+	}
+	return
+}
+
 func (w *Workspace) Sprint() ([]string, error) {
 	res := []string{"FROM " + w.Image}
 	for _, entry := range w.history {
@@ -127,7 +144,6 @@ func (w *Workspace) commit(id string) (string, error) {
 	imageId, err := CommitContainer(w.docker, id)
 	if err == nil {
 		w.currentImage = imageId
-		RemoveContainer(w.docker, id)
 	}
 	return imageId, err
 }
@@ -141,6 +157,7 @@ func (w *Workspace) back(n int) error {
 		if w.history[i].Deleted {
 			continue
 		}
+		RemoveContainer(w.docker, w.history[i].Id)
 		w.history[i].Deleted = true
 		deleted += 1
 		if deleted == n {
