@@ -15,6 +15,6 @@ build:
 
 build-ci:
 	go get github.com/mitchellh/gox
-	sudo chown -R $USER: /usr/local/go
+	sudo chown -R ${USER}: /usr/local/go
 	gox -build-toolchain
 	$(MAKE) build
