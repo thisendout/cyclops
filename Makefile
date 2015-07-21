@@ -11,6 +11,9 @@ cover:
 	rm coverage.out
 
 build:
-	go get github.com/mitchellh/gox
-	gox -build-toolchain
 	gox -os="darwin linux windows"
+
+build-ci:
+	go get github.com/mitchellh/gox
+	sudo gox -build-toolchain
+	sudo gox -os="darwin linux windows"
