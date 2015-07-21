@@ -15,5 +15,6 @@ build:
 
 build-ci:
 	go get github.com/mitchellh/gox
-	sudo gox -build-toolchain
-	sudo gox -os="darwin linux windows"
+	sudo chown -R $USER: /usr/local/go
+	gox -build-toolchain
+	$(MAKE) build
