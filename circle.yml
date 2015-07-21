@@ -6,7 +6,7 @@ deployment:
   feature:
     branch: /release\/.*/
     commands:
-      - make build
+      - make build-ci
 general:
   artifacts:
     - "cyclops_*"

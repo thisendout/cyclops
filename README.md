@@ -3,6 +3,8 @@
 
 A docker-backed [read-eval-print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for systems scripting and configuration.  Faster than a VM, safer than production, more feedback than a local terminal.
 
+![cyclops-demo](https://s3.amazonaws.com/cyclops-artifacts/cyclops-demo1.gif)
+
 cyclops executes commands inside of a docker container and provides immediate feedback.  Commit changes to incrementally build a final image or Dockerfile.  Quickly roll back if you don't like what you see.  When you're done, write out your history to a Dockerfile and/or save the resulting docker container for later.
 
 cyclops is designed to help with:
