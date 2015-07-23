@@ -61,7 +61,8 @@ func Eval(d DockerService, command string, image string) (EvalResult, error) {
 	options := docker.CreateContainerOptions{
 		Config: &docker.Config{
 			Image: image,
-			Cmd:   []string{"/bin/bash", "-c", command},
+			Cmd:   []string{"/bin/sh", "-c", command},
+			Env:   []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
 		},
 		HostConfig: &docker.HostConfig{
 			Binds: []string{fmt.Sprintf("%s:/work", cwd)},
