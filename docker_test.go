@@ -110,6 +110,10 @@ func (m *MockDockerClient) AttachToContainer(docker.AttachToContainerOptions) er
 	return nil
 }
 
+func (m *MockDockerClient) BuildImage(docker.BuildImageOptions) error {
+	return nil
+}
+
 func (m *MockDockerClient) CommitContainer(opts docker.CommitContainerOptions) (*docker.Image, error) {
 	if m.FailCommit {
 		return &docker.Image{}, errors.New("MOCK: Failed to commit")
@@ -139,6 +143,10 @@ func (m *MockDockerClient) CreateContainer(docker.CreateContainerOptions) (*dock
 	}
 	m.Containers = append(m.Containers, cont)
 	return cont, nil
+}
+
+func (m *MockDockerClient) RemoveImage(id string) error {
+	return nil
 }
 
 func (m *MockDockerClient) RemoveContainer(opts docker.RemoveContainerOptions) error {

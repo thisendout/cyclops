@@ -6,19 +6,23 @@ import (
 	"os"
 	"path"
 	"time"
+	//"archive/tar"
+	//"bytes"
 
 	"github.com/fsouza/go-dockerclient"
 )
 
 type DockerService interface {
 	AttachToContainer(docker.AttachToContainerOptions) error
+	BuildImage(docker.BuildImageOptions) error
 	CommitContainer(docker.CommitContainerOptions) (*docker.Image, error)
 	ContainerChanges(string) ([]docker.Change, error)
 	CreateContainer(docker.CreateContainerOptions) (*docker.Container, error)
+	InspectImage(string) (*docker.Image, error)
 	RemoveContainer(docker.RemoveContainerOptions) error
+	RemoveImage(string) error
 	StartContainer(string, *docker.HostConfig) error
 	WaitContainer(string) (int, error)
-	InspectImage(string) (*docker.Image, error)
 }
 
 func NewDockerClient(host string, tlsVerify string, certPath string) (client *docker.Client, err error) {
@@ -54,6 +58,7 @@ func Eval(d DockerService, command string, image string) (EvalResult, error) {
 		Command: command,
 		Image:   image,
 		Deleted: false,
+		Build:   false,
 	}
 
 	cwd, _ := os.Getwd()
@@ -123,7 +128,38 @@ func RemoveContainer(d DockerService, id string) error {
 	return d.RemoveContainer(docker.RemoveContainerOptions{ID: id})
 }
 
+func RemoveImage(d DockerService, id string) error {
+	return d.RemoveImage(id)
+}
+
 func verifyImage(d DockerService, image string) error {
 	_, err := d.InspectImage(image)
 	return err
+}
+
+func DockerBuild(d DockerService, name string) (EvalResult, error) {
+	res := EvalResult{Deleted: false}
+	outputBuf := NewBuffer(os.Stdout)
+	opts := docker.BuildImageOptions{
+		Name:         name,
+		Dockerfile:   "." + name,
+		Pull:         false,
+		OutputStream: outputBuf,
+		ContextDir:   ".",
+	}
+	start := time.Now()
+	err := d.BuildImage(opts)
+	res.Log = outputBuf
+	res.Duration = time.Since(start)
+	if err != nil {
+		res.Code = 1
+		return res, err
+	}
+	_, err = d.InspectImage(name)
+	if err != nil {
+		return res, err
+	}
+	res.NewImage = name
+	res.Code = 0
+	return res, nil
 }

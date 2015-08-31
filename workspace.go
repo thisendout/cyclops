@@ -4,12 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"time"
 
+	"code.google.com/p/go-uuid/uuid"
 	"github.com/fsouza/go-dockerclient"
 )
 
 type EvalResult struct {
+	Build     bool
 	Command   string
 	Code      int
 	Deleted   bool
@@ -57,16 +60,20 @@ func (w *Workspace) CommitLast() (string, error) {
 	if len(history) == 0 {
 		return "", errors.New("No container found to commit")
 	}
-	lastResult := len(w.history)-1
-	if history[lastResult].NewImage != "" {
+	lastResult := len(w.history) - 1
+	if history[lastResult].NewImage != "" && history[lastResult].Id != "" {
 		return "", errors.New("Container already committed")
 	}
 
-	image, err := w.commit(history[lastResult].Id)
-	if err != nil {
-		return "", err
+	image := history[lastResult].NewImage
+	if history[lastResult].Id != "" {
+		committedImage, err := w.commit(history[lastResult].Id)
+		if err != nil {
+			return "", err
+		}
+		image = committedImage
+		history[lastResult].NewImage = committedImage
 	}
-	history[lastResult].NewImage = image
 	history[lastResult].Deleted = false
 	w.history = history
 	return image, nil
@@ -97,6 +104,37 @@ func (w *Workspace) Eval(command string) (EvalResult, error) {
 func (w *Workspace) evalCommand(command string) (EvalResult, error) {
 	res, err := Eval(w.docker, command, w.CurrentImage)
 	res.BaseImage = w.Image
+	return res, err
+}
+
+func (w *Workspace) BuildCommit(cmd string) (EvalResult, error) {
+	res, err := w.build(cmd)
+	w.CurrentImage = res.NewImage
+	w.history = append(w.history, res)
+	return res, err
+}
+
+func (w *Workspace) Build(cmd string) (EvalResult, error) {
+	res, err := w.build(cmd)
+	res.Deleted = true
+	w.history = append(w.history, res)
+	return res, err
+}
+
+func (w *Workspace) build(cmd string) (EvalResult, error) {
+	name := uuid.New()
+	c := fmt.Sprintf("FROM %s\n%s", w.CurrentImage, cmd)
+	f, _ := os.Create("." + name)
+	f.Write([]byte(c))
+	res, err := DockerBuild(w.docker, name)
+	os.Remove("." + name)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res.Build = true
+	res.Command = cmd
+	res.BaseImage = w.Image
+	res.Image = w.CurrentImage
 	return res, err
 }
 

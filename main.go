@@ -236,9 +236,18 @@ mainloop:
 				fmt.Println(err)
 			} else {
 				fmt.Println("Committed:", id)
+				ws.SetImage(id)
 			}
 		case "eval":
-			if res, err := ws.Eval(args); err != nil {
+			res := EvalResult{}
+			cmd := strings.SplitN(args, " ", 2)
+			switch cmd[0] {
+			case "ADD", "COPY", "ENV", "USER", "WORKDIR":
+				res, err = ws.Build(args)
+			default:
+				res, err = ws.Eval(args)
+			}
+			if err != nil {
 				fmt.Println(err)
 			} else {
 				printResults(res)
@@ -278,10 +287,23 @@ mainloop:
 				}
 			}
 		case "run":
-			if res, err := ws.Run(args); err != nil {
+			res := EvalResult{}
+			cmd := strings.SplitN(args, " ", 2)
+			switch cmd[0] {
+			case "ADD", "COPY", "ENV", "USER", "WORKDIR":
+				res, err = ws.BuildCommit(args)
+			default:
+				res, err = ws.Run(args)
+			}
+			if err != nil {
 				fmt.Println(err)
 			} else {
-				printResults(res)
+				if err = ws.SetImage(res.NewImage); err != nil {
+					fmt.Println("Error setting new image:", err)
+					ws.back(1)
+				} else {
+					printResults(res)
+				}
 			}
 		case "write":
 			if args == "" {
